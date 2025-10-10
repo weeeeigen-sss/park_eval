@@ -149,13 +149,17 @@ class ParkWidget(QWidget):
         info = infos[index]
 
         path = os.path.join(it_dir, info.timestamp + '_' + info.lot + '_plate.bmp')
-        plate_pixmap = QPixmap(path) if os.path.exists(path) else QPixmap()  # 画像ファイルのパス
-        self.plate_label.setPixmap(plate_pixmap)
+        if os.path.exists(path):
+            plate_pixmap = QPixmap(path)
+            p_scaled_pixmap = plate_pixmap.scaled(plate_pixmap.width() // 2, plate_pixmap.height() // 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            self.plate_label.setPixmap(p_scaled_pixmap)
+        else:
+            self.plate_label.setPixmap(QPixmap())
 
         path = os.path.join(it_dir, info.timestamp + '_' + info.lot + '_vehicle.jpg')
         if os.path.exists(path):
             vehicle_pixmap = QPixmap(path)
-            v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 2, vehicle_pixmap.height() // 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 4, vehicle_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.vehicle_label.setPixmap(v_scaled_pixmap)
         else:
             self.vehicle_label.setPixmap(QPixmap())
@@ -164,7 +168,7 @@ class ParkWidget(QWidget):
         path = os.path.join(raw_dir, info.name() + '_raw.jpg')
         if os.path.exists(path):
             raw_pixmap = QPixmap(path)  
-            scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 4, raw_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 6, raw_pixmap.height() // 6, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.raw_label.setPixmap(scaled_pixmap)
         else:
             self.raw_label.setPixmap(QPixmap())
