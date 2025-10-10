@@ -120,6 +120,9 @@ class ParkWidget(QWidget):
 
         layout = QVBoxLayout()
 
+        self.info_label = QLabel()
+        layout.addWidget(self.info_label)
+
         self.raw_label = QLabel()
         layout.addWidget(self.raw_label)
 
@@ -159,7 +162,7 @@ class ParkWidget(QWidget):
         path = os.path.join(it_dir, info.timestamp + '_' + info.lot + '_vehicle.jpg')
         if os.path.exists(path):
             vehicle_pixmap = QPixmap(path)
-            v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 4, vehicle_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 2, vehicle_pixmap.height() // 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.vehicle_label.setPixmap(v_scaled_pixmap)
         else:
             self.vehicle_label.setPixmap(QPixmap())
@@ -168,19 +171,17 @@ class ParkWidget(QWidget):
         path = os.path.join(raw_dir, info.name() + '_raw.jpg')
         if os.path.exists(path):
             raw_pixmap = QPixmap(path)  
-            scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 6, raw_pixmap.height() // 6, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 4, raw_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.raw_label.setPixmap(scaled_pixmap)
         else:
             self.raw_label.setPixmap(QPixmap())
 
-        text = f'<b>{index} / {len(infos) - 1}</b><br>' + \
-            f'Json: {info.json_file}<br>' + \
-            f'Lot: {info.lot}<br>' + \
-            f'TimeStamp: {info.timestamp}<br>'
-
+        self.info_label.setText(f'<b>{index} / {len(infos) - 1} (Lot: {info.lot})</b><br>' + \
+            f'{info.json_file}<br>' + \
+            f'TimeStamp: {info.timestamp}')
         
         color = "red" if index > 0 and info.is_occupied != infos[index - 1].is_occupied else "white"
-        text += f'<font color="{color}">Is_Occupied: {info.is_occupied}</font><br>'
+        text = f'<font color="{color}">Is_Occupied: {info.is_occupied}</font><br>'
 
         color = "red" if index > 0 and info.is_occlusion != infos[index - 1].is_occlusion else "white"
         text += f'<font color="{color}">Is_Occlusion: {info.is_occlusion}</font><br>'
@@ -197,18 +198,6 @@ class ParkWidget(QWidget):
         self.json_label.setText(text)
 
 
-
-        # text = f'<b>{index} / {len(infos) - 1}</b><br>' + \
-        #     f'<b>Json: {self.json_file}</b><br>' + \
-        #     f'<b>Lot: {self.lot}</b><br>' + \
-        #     f'<b>TimeStamp: {self.timestamp}</b><br>' + \
-        #     f'Is_Occupied: {self.is_occupied}<br>' + \
-        #     f'Is_Occlusion: {self.is_occlusion}<br>' + \
-        #     f'Vehicle_Status: {self.vehicle_status}<br>' + \
-        #     f'lpr_top: {self.lpr_top}<br>' + \
-        #     f'lpr_bottom: {self.lpr_bottom}'
-
-
     def set_empty(self):
         empty = QPixmap()
         self.plate_label.setPixmap(empty)
@@ -216,14 +205,6 @@ class ParkWidget(QWidget):
         self.raw_label.setPixmap(empty)
 
         self.json_label.setText('')
-
-
-    # def update_view(self):
-    #     pixmap1 = QPixmap(os.path.join(self.it_dir, infos[self.info_index].timestamp + '_' + infos[self.info_index].lot + '_plate.bmp'))  # 画像ファイルのパス
-    #     self.plate_label.setPixmap(pixmap1)
-
-    #     pixmap2 = QPixmap(os.path.join(self.it_dir, infos[self.info_index].timestamp + '_' + infos[self.info_index].lot + '_vehicle.jpg'))
-    #     self.vehicle_label.setPixmap(pixmap2)
 
         
 
