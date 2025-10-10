@@ -80,6 +80,9 @@ class MainWidget(QMainWindow):
         self.on_lot_combo_changed(0)
         toolbar.addWidget(self.lot_combo)
 
+        self.save_button = QPushButton('Save')
+        toolbar.addWidget(self.save_button)
+
         # self.setLayout(layout)
         self.setCentralWidget(central)
         self.setWindowTitle("park_eval")
@@ -171,12 +174,12 @@ class ParkWidget(QWidget):
         path = os.path.join(raw_dir, info.name() + '_raw.jpg')
         if os.path.exists(path):
             raw_pixmap = QPixmap(path)  
-            scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 4, raw_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 5, raw_pixmap.height() // 5, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.raw_label.setPixmap(scaled_pixmap)
         else:
             self.raw_label.setPixmap(QPixmap())
 
-        self.info_label.setText(f'<b>{index} / {len(infos) - 1} (Lot: {info.lot})</b><br>' + \
+        self.info_label.setText(f'<b>{index} / {len(infos) - 1} (Lot: {info.lot})</b><br><br>' + \
             f'{info.json_file}<br>' + \
             f'TimeStamp: {info.timestamp}')
         
