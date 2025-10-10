@@ -44,16 +44,6 @@ class ParkingInfo:
     def name(self):
         return self.timestamp + '_' + self.lot
     
-    def text(self):
-        return \
-            f'Json: {self.json_file}\n' + \
-            f'Lot: {self.lot}\n' + \
-            f'TimeStamp: {self.timestamp}\n' + \
-            f'Is_Occupied: {self.is_occupied}\n' + \
-            f'Is_Occlusion: {self.is_occlusion}\n' + \
-            f'Vehicle_Status: {self.vehicle_status}\n' + \
-            f'lpr_top: {self.lpr_top}\n' + \
-            f'lpr_bottom: {self.lpr_bottom}'
 
 class MainWidget(QMainWindow):
     def __init__(self, frames, path, infos: list[ParkingInfo], lots):
@@ -158,18 +148,62 @@ class ParkWidget(QWidget):
     def set_info(self, infos: list[ParkingInfo], index: int, it_dir: str, raw_dir: str):
         info = infos[index]
 
-        plate_pixmap = QPixmap(os.path.join(it_dir, info.timestamp + '_' + info.lot + '_plate.bmp'))  # 画像ファイルのパス
+        path = os.path.join(it_dir, info.timestamp + '_' + info.lot + '_plate.bmp')
+        plate_pixmap = QPixmap(path) if os.path.exists(path) else QPixmap()  # 画像ファイルのパス
         self.plate_label.setPixmap(plate_pixmap)
 
-        vehicle_pixmap = QPixmap(os.path.join(it_dir, info.timestamp + '_' + info.lot + '_vehicle.jpg'))
-        v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 2, vehicle_pixmap.height() // 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        self.vehicle_label.setPixmap(v_scaled_pixmap)
+        path = os.path.join(it_dir, info.timestamp + '_' + info.lot + '_vehicle.jpg')
+        if os.path.exists(path):
+            vehicle_pixmap = QPixmap(path)
+            v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 2, vehicle_pixmap.height() // 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            self.vehicle_label.setPixmap(v_scaled_pixmap)
+        else:
+            self.vehicle_label.setPixmap(QPixmap())
+            
 
-        raw_pixmap = QPixmap(os.path.join(raw_dir, info.name() + '_raw.jpg'))
-        scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 4, raw_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        self.raw_label.setPixmap(scaled_pixmap)
+        path = os.path.join(raw_dir, info.name() + '_raw.jpg')
+        if os.path.exists(path):
+            raw_pixmap = QPixmap(path)  
+            scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 4, raw_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            self.raw_label.setPixmap(scaled_pixmap)
+        else:
+            self.raw_label.setPixmap(QPixmap())
 
-        self.json_label.setText(f'{index} / {len(infos) - 1}\n' + info.text())
+        text = f'<b>{index} / {len(infos) - 1}</b><br>' + \
+            f'Json: {info.json_file}<br>' + \
+            f'Lot: {info.lot}<br>' + \
+            f'TimeStamp: {info.timestamp}<br>'
+
+        
+        color = "red" if index > 0 and info.is_occupied != infos[index - 1].is_occupied else "white"
+        text += f'<font color="{color}">Is_Occupied: {info.is_occupied}</font><br>'
+
+        color = "red" if index > 0 and info.is_occlusion != infos[index - 1].is_occlusion else "white"
+        text += f'<font color="{color}">Is_Occlusion: {info.is_occlusion}</font><br>'
+
+        color = "red" if index > 0 and info.vehicle_status != infos[index - 1].vehicle_status else "white"
+        text += f'<font color="{color}">Vehicle_Status: {info.vehicle_status}</font><br>'
+
+        color = "red" if index > 0 and info.lpr_top != infos[index - 1].lpr_top else "white"
+        text += f'<font color="{color}">lpr_top: {info.lpr_top}</font><br>'
+
+        color = "red" if index > 0 and info.lpr_bottom != infos[index - 1].lpr_bottom else "white"
+        text += f'<font color="{color}">lpr_bottom: {info.lpr_bottom}</font><br>'
+
+        self.json_label.setText(text)
+
+
+
+        # text = f'<b>{index} / {len(infos) - 1}</b><br>' + \
+        #     f'<b>Json: {self.json_file}</b><br>' + \
+        #     f'<b>Lot: {self.lot}</b><br>' + \
+        #     f'<b>TimeStamp: {self.timestamp}</b><br>' + \
+        #     f'Is_Occupied: {self.is_occupied}<br>' + \
+        #     f'Is_Occlusion: {self.is_occlusion}<br>' + \
+        #     f'Vehicle_Status: {self.vehicle_status}<br>' + \
+        #     f'lpr_top: {self.lpr_top}<br>' + \
+        #     f'lpr_bottom: {self.lpr_bottom}'
+
 
     def set_empty(self):
         empty = QPixmap()
