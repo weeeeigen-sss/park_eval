@@ -1,15 +1,53 @@
 import sys
 import os
 import json
+import csv
+from enum import Enum
 
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QCheckBox
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
 
+class Status(Enum):
+    NoLabel = 0
+    OK = 1
+    NG_Out = 2
+    NG_Shadow = 3
+    NG_Occlusion = 4
+    NG_FP = 5
+    NG_Blur = 6
+    NG_Others = 7
+    OK_Out = 8
+    Wrong_Out = 9
+
+def text_for(status: Status):
+    if status == Status.NoLabel:
+        return ''
+    elif status == Status.OK:
+        return 'OK'
+    elif status == Status.NG_Out:
+        return 'NG（見切れ）'
+    elif status == Status.NG_Shadow:
+        return 'NG（影）'
+    elif status == Status.NG_Occlusion:
+        return 'NG（Occlusion）'
+    elif status == Status.NG_FP:
+        return 'NG（FP）'
+    elif status == Status.NG_Blur:
+        return 'NG（ブラー）'
+    elif status == Status.NG_Others:
+        return 'NG（その他）'
+    elif status == Status.OK_Out:
+        return 'OK（出庫）'
+    elif status == Status.Wrong_Out:
+        return '誤出庫'
+
 class ParkingInfo:
     def __init__(self, json_path):
-        lot = os.path.splitext(os.path.basename(json_path))[0].split('_')[1]
+        split = os.path.splitext(os.path.basename(json_path))[0].split('_')
+        lot = split[1]
+        self.is_ps = len(split) == 3
 
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -41,8 +79,19 @@ class ParkingInfo:
                 vehicle_bbox = info.get("Vehicle_Bbox", {})
                 self.vehicle_score = vehicle_bbox.get("score")
 
+                self.status = Status.NoLabel
+                self.is_miss_in = False
+                self.is_miss_out = False
+
     def name(self):
-        return self.timestamp + '_' + self.lot
+        name = self.timestamp + '_' + self.lot
+        return name + '_ps' if self.is_ps else name
+    
+    def set(self, status: Status):
+        self.status = status
+
+    def create_row(self):
+        return [f'{self.json_file}',f'{self.lot}', f'{self.is_occupied}', f'{int(self.is_miss_in)}',f'{int(self.is_miss_out)}',f'{self.status}']
     
 
 class MainWidget(QMainWindow):
@@ -55,6 +104,8 @@ class MainWidget(QMainWindow):
         self.lots = lots
 
         self.info_index = frames - 1
+
+        self.path = path
         self.it_dir = os.path.join(path, 'IT')
         self.raw_dir = os.path.join(path, 'RAW')
 
@@ -81,6 +132,7 @@ class MainWidget(QMainWindow):
         toolbar.addWidget(self.lot_combo)
 
         self.save_button = QPushButton('Save')
+        self.save_button.clicked.connect(self.save)
         toolbar.addWidget(self.save_button)
 
         # self.setLayout(layout)
@@ -115,6 +167,32 @@ class MainWidget(QMainWindow):
             else:
                 self.park_widgets[i].set_empty()
 
+    def save(self):
+        path = os.path.join(self.path, 'label.csv')
+        with open(path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(
+                [
+                    'json',
+                    'lot',
+                    'is_occupied',
+                    'is_miss_in',
+                    'is_miss_out',
+                    'status',
+                    'status_label'
+                    ])
+            for info in self.infos:
+                writer.writerow(
+                    [
+                        f'{info.json_file}',
+                        f'{info.lot}', 
+                        f'{info.is_occupied}', 
+                        f'{int(info.is_miss_in)}',
+                        f'{int(info.is_miss_out)}',
+                        f'{info.status.value}',
+                        f'{info.status}'
+                        ])
+
 
 
 class ParkWidget(QWidget):
@@ -144,17 +222,28 @@ class ParkWidget(QWidget):
         layout.addLayout(mid_layout)
 
         self.combo = QComboBox()
-        self.combo.addItems(['', 'OK', 'OK (2+)', 'NG（見切れ）', 'NG（影）', 'NG（オクルージョン）', '出庫見逃し', '入庫見逃し', '誤出庫'])
-
+        self.combo.addItems([text_for(status) for status in Status])
+        self.combo.currentIndexChanged.connect(
+            lambda index: self.info.set(Status(index))
+        )
         layout.addWidget(self.combo)
+
+        self.miss_in = QCheckBox('入庫見逃し')
+        layout.addWidget(self.miss_in)
+
+        self.miss_out = QCheckBox('出庫見逃し')
+        layout.addWidget(self.miss_out)
+
 
         # レイアウトをウィジェットにセット
         self.setLayout(layout)
 
     def set_info(self, infos: list[ParkingInfo], index: int, it_dir: str, raw_dir: str):
         info = infos[index]
+        self.info = info
 
-        path = os.path.join(it_dir, info.timestamp + '_' + info.lot + '_plate.bmp')
+        # Update image
+        path = os.path.join(it_dir, info.name() + '_plate.bmp')
         if os.path.exists(path):
             plate_pixmap = QPixmap(path)
             p_scaled_pixmap = plate_pixmap.scaled(plate_pixmap.width() // 2, plate_pixmap.height() // 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
@@ -162,7 +251,7 @@ class ParkWidget(QWidget):
         else:
             self.plate_label.setPixmap(QPixmap())
 
-        path = os.path.join(it_dir, info.timestamp + '_' + info.lot + '_vehicle.jpg')
+        path = os.path.join(it_dir, info.name() + '_vehicle.jpg')
         if os.path.exists(path):
             vehicle_pixmap = QPixmap(path)
             v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 2, vehicle_pixmap.height() // 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
@@ -170,7 +259,6 @@ class ParkWidget(QWidget):
         else:
             self.vehicle_label.setPixmap(QPixmap())
             
-
         path = os.path.join(raw_dir, info.name() + '_raw.jpg')
         if os.path.exists(path):
             raw_pixmap = QPixmap(path)  
@@ -179,6 +267,7 @@ class ParkWidget(QWidget):
         else:
             self.raw_label.setPixmap(QPixmap())
 
+        # Update text
         self.info_label.setText(f'<b>{index} / {len(infos) - 1} (Lot: {info.lot})</b><br><br>' + \
             f'{info.json_file}<br>' + \
             f'TimeStamp: {info.timestamp}')
@@ -200,6 +289,10 @@ class ParkWidget(QWidget):
 
         self.json_label.setText(text)
 
+        # Update status
+        self.miss_in.setChecked(info.is_miss_in)
+        self.miss_out.setChecked(info.is_miss_out)
+        self.combo.setCurrentIndex(info.status.value)
 
     def set_empty(self):
         empty = QPixmap()
@@ -210,14 +303,12 @@ class ParkWidget(QWidget):
         self.json_label.setText('')
 
         
-
-
 def load(path: str):
     meta_dir = os.path.join(path, 'META')
     json_files = [f for f in os.listdir(meta_dir) if f.endswith(".json")]
     json_files.sort()
 
-    infos = []
+    infos: list[ParkingInfo] = []
     lots = []
     for json_file in json_files:
         info = ParkingInfo(os.path.join(meta_dir, json_file))
@@ -231,7 +322,20 @@ def load(path: str):
 if __name__ == "__main__":
     path = 'sample_data/20250910'
     infos, lots = load(path)
-    
+
+    label_csv = os.path.join(path, 'label.csv')
+    with open(label_csv, newline='', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        # header = next(reader)
+        for row in reader:
+            match = [info for info in infos if info.json_file == row['json']]
+            if len(match) == 1:
+                match[0].is_miss_in = bool(int(row['is_miss_in']))
+                match[0].is_miss_in = bool(int(row['is_miss_out']))
+                match[0].status = Status(int(row['status']))
+            else:
+                print(row['json'])
+
     app = QApplication(sys.argv)
     window = MainWidget(3, path, infos, lots)
     window.show()
