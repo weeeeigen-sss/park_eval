@@ -192,7 +192,7 @@ class MainWidget(QMainWindow):
                         f'{info.status.value}',
                         f'{info.status}'
                         ])
-
+        self.statusBar().showMessage(f'Save: {path}')
 
 
 class ParkWidget(QWidget):
@@ -300,7 +300,12 @@ class ParkWidget(QWidget):
         self.vehicle_label.setPixmap(empty)
         self.raw_label.setPixmap(empty)
 
+        self.info_label.setText('')
         self.json_label.setText('')
+
+        self.miss_in.setChecked(False)
+        self.miss_out.setChecked(False)
+        self.combo.setCurrentIndex(0)
 
         
 def load(path: str):
