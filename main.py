@@ -4,7 +4,7 @@ import json
 import csv
 from enum import Enum
 
-from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QCheckBox
+from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QCheckBox, QFileDialog
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
@@ -89,6 +89,12 @@ class ParkingInfo:
     
     def set(self, status: Status):
         self.status = status
+
+    def set_miss_in(self, miss_in):
+        self.is_miss_in = miss_in
+
+    def set_miss_out(self, miss_out):
+        self.is_miss_out = miss_out
     
 
 class MainWidget(QMainWindow):
@@ -299,9 +305,15 @@ class ParkWidget(QWidget):
         layout.addWidget(self.combo)
 
         self.miss_in = QCheckBox('入庫見逃し')
+        self.miss_in.stateChanged.connect(
+            lambda check: self.info.set_miss_in(check == Qt.CheckState.Checked.value)
+        )
         layout.addWidget(self.miss_in)
 
         self.miss_out = QCheckBox('出庫見逃し')
+        self.miss_out.stateChanged.connect(
+            lambda check: self.info.set_miss_out(check == Qt.CheckState.Checked.value)
+        )
         layout.addWidget(self.miss_out)
 
 
@@ -316,7 +328,7 @@ class ParkWidget(QWidget):
         path = os.path.join(it_dir, info.name() + '_plate.bmp')
         if os.path.exists(path):
             plate_pixmap = QPixmap(path)
-            p_scaled_pixmap = plate_pixmap.scaled(plate_pixmap.width() // 2, plate_pixmap.height() // 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            p_scaled_pixmap = plate_pixmap.scaled(plate_pixmap.width(), plate_pixmap.height(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.plate_label.setPixmap(p_scaled_pixmap)
         else:
             self.plate_label.setPixmap(QPixmap())
@@ -324,7 +336,7 @@ class ParkWidget(QWidget):
         path = os.path.join(it_dir, info.name() + '_vehicle.jpg')
         if os.path.exists(path):
             vehicle_pixmap = QPixmap(path)
-            v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 2, vehicle_pixmap.height() // 2, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 4, vehicle_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.vehicle_label.setPixmap(v_scaled_pixmap)
         else:
             self.vehicle_label.setPixmap(QPixmap())
@@ -377,80 +389,6 @@ class ParkWidget(QWidget):
         self.miss_out.setChecked(False)
         self.combo.setCurrentIndex(0)
 
-def eval(path: str, infos: list[ParkingInfo]):
-    detect_all = 0
-    detect_ok = 0
-
-    ng_out = 0
-    ng_shadow = 0
-    ng_occlusion = 0
-    ng_fp = 0
-    ng_blur = 0
-    ng_others = 0
-
-    wrong_out = 0
-
-    is_miss_in = 0
-    is_miss_out = 0
-
-    resend = 0
-    is_occupied_last = False
-
-    for info in infos:
-        if info.is_occupied:
-            detect_all += 1
-
-            if is_occupied_last:
-                resend += 1
-
-            if info.is_miss_in:
-                is_miss_in += 1
-            if info.is_miss_out:
-                is_miss_out += 1
-
-            if info.status == Status.OK:
-                detect_ok += 1
-            elif info.status == Status.NG_Out:
-                ng_out += 1
-            elif info.status == Status.NG_Shadow:
-                ng_shadow += 1
-            elif info.status == Status.NG_Occlusion:
-                ng_occlusion += 1
-            elif info.status == Status.NG_FP:
-                ng_fp += 1  
-            elif info.status == Status.NG_Blur:
-                ng_blur += 1
-            elif info.status == Status.NG_Others:
-                ng_others += 1
-            elif info.status == Status.Wrong_Out:
-                wrong_out += 1
-        
-        is_occupied_last = info.is_occupied
-
-
-    path = os.path.join(path, 'eval.csv')
-    with open(path, 'w', newline='', encoding='utf-8') as f:
-            writer = csv.writer(f)
-            writer.writerows([
-                ['検知総数', detect_all],
-                ['車両総数', detect_all - wrong_out - ng_fp - resend + is_miss_out],
-                ['入庫見逃し', is_miss_in],
-                ['出庫見逃し', is_miss_out],
-                ['誤出庫', wrong_out],
-                ['全桁OK', detect_ok],
-                ['全桁NG', ng_out + ng_shadow + ng_occlusion + ng_fp + ng_blur + ng_others],
-                ['全桁NG（見切れ）', ng_out],
-                ['全桁NG（影）', ng_shadow],
-                ['全桁NG（Occlusion）', ng_occlusion],
-                ['全桁NG（FP）', ng_fp],
-                ['全桁NG（Blur）', ng_blur],
-                ['全桁NG（その他）', ng_others],
-                ['再送回数', resend],
-                ['全桁精度（メタごと）', detect_ok / detect_all],
-                ['全桁精度（見切れ/FP抜き）', detect_ok / (detect_all - ng_fp, ng_out)]
-            ])
-            
-
         
 def load(path: str):
     meta_dir = os.path.join(path, 'META')
@@ -469,7 +407,14 @@ def load(path: str):
     
 
 if __name__ == "__main__":
-    path = '/Users/eigen/Desktop/20251007_車室監視_道玄坂２車室_1006_1013/CAM1/20251013'
+    app = QApplication(sys.argv)
+
+    path = QFileDialog.getExistingDirectory(None, "フォルダを選択")
+    if not path:
+        print("No data selected.")
+        sys.exit()
+
+    print('Load: ' + path)
     infos, lots = load(path)
 
     label_csv = os.path.join(path, 'label.csv')
@@ -481,12 +426,11 @@ if __name__ == "__main__":
                 match = [info for info in infos if info.json_file == row['json']]
                 if len(match) == 1:
                     match[0].is_miss_in = bool(int(row['is_miss_in']))
-                    match[0].is_miss_in = bool(int(row['is_miss_out']))
+                    match[0].is_miss_out = bool(int(row['is_miss_out']))
                     match[0].status = Status(int(row['status']))
                 else:
                     print(row['json'])
 
-    app = QApplication(sys.argv)
     window = MainWidget(3, path, infos, lots)
     window.show()
     sys.exit(app.exec())
