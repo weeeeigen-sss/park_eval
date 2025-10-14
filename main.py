@@ -89,9 +89,6 @@ class ParkingInfo:
     
     def set(self, status: Status):
         self.status = status
-
-    def create_row(self):
-        return [f'{self.json_file}',f'{self.lot}', f'{self.is_occupied}', f'{int(self.is_miss_in)}',f'{int(self.is_miss_out)}',f'{self.status}']
     
 
 class MainWidget(QMainWindow):
@@ -132,8 +129,12 @@ class MainWidget(QMainWindow):
         toolbar.addWidget(self.lot_combo)
 
         self.save_button = QPushButton('Save')
-        self.save_button.clicked.connect(self.save)
+        self.save_button.clicked.connect(self.save_label)
         toolbar.addWidget(self.save_button)
+
+        self.eval_button = QPushButton('Eval')
+        self.eval_button.clicked.connect(self.save_eval)
+        toolbar.addWidget(self.eval_button)
 
         # self.setLayout(layout)
         self.setCentralWidget(central)
@@ -167,7 +168,7 @@ class MainWidget(QMainWindow):
             else:
                 self.park_widgets[i].set_empty()
 
-    def save(self):
+    def save_label(self):
         path = os.path.join(self.path, 'label.csv')
         with open(path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
@@ -194,6 +195,75 @@ class MainWidget(QMainWindow):
                         ])
         self.statusBar().showMessage(f'Save: {path}')
 
+    def save_eval(self):
+        detect_all = detect_ok = 0
+
+        ng_out = ng_shadow = ng_occlusion = ng_fp = ng_blur = ng_others = 0
+
+        wrong_out = 0
+
+        is_miss_in = is_miss_out = 0
+
+        resend = 0
+        is_occupied_last = False
+
+        for lot in self.lots:
+            for info in self.infos:
+                if info.lot != lot:
+                    continue
+                
+                if info.is_occupied:
+                    detect_all += 1
+
+                    if is_occupied_last:
+                        resend += 1
+
+                    if info.is_miss_in:
+                        is_miss_in += 1
+                    if info.is_miss_out:
+                        is_miss_out += 1
+
+                    if info.status == Status.OK:
+                        detect_ok += 1
+                    elif info.status == Status.NG_Out:
+                        ng_out += 1
+                    elif info.status == Status.NG_Shadow:
+                        ng_shadow += 1
+                    elif info.status == Status.NG_Occlusion:
+                        ng_occlusion += 1
+                    elif info.status == Status.NG_FP:
+                        ng_fp += 1  
+                    elif info.status == Status.NG_Blur:
+                        ng_blur += 1
+                    elif info.status == Status.NG_Others:
+                        ng_others += 1
+                    elif info.status == Status.Wrong_Out:
+                        wrong_out += 1
+                
+                is_occupied_last = info.is_occupied
+
+
+        path = os.path.join(self.path, 'eval.csv')
+        with open(path, 'w', newline='', encoding='utf-8-sig') as f:
+                writer = csv.writer(f)
+                writer.writerows([
+                    ['検知総数', detect_all],
+                    ['車両総数', detect_all - wrong_out - ng_fp - resend + is_miss_out],
+                    ['入庫見逃し', is_miss_in],
+                    ['出庫見逃し', is_miss_out],
+                    ['誤出庫', wrong_out],
+                    ['全桁OK', detect_ok],
+                    ['全桁NG', ng_out + ng_shadow + ng_occlusion + ng_fp + ng_blur + ng_others],
+                    ['全桁NG（見切れ）', ng_out],
+                    ['全桁NG（影）', ng_shadow],
+                    ['全桁NG（Occlusion）', ng_occlusion],
+                    ['全桁NG（FP）', ng_fp],
+                    ['全桁NG（Blur）', ng_blur],
+                    ['全桁NG（その他）', ng_others],
+                    ['再送回数', resend],
+                    ['全桁精度（メタごと）', detect_ok / detect_all],
+                    ['全桁精度（見切れ/FP抜き）', detect_ok / (detect_all - ng_fp - ng_out)]
+                ])
 
 class ParkWidget(QWidget):
     def __init__(self):
@@ -307,6 +377,80 @@ class ParkWidget(QWidget):
         self.miss_out.setChecked(False)
         self.combo.setCurrentIndex(0)
 
+def eval(path: str, infos: list[ParkingInfo]):
+    detect_all = 0
+    detect_ok = 0
+
+    ng_out = 0
+    ng_shadow = 0
+    ng_occlusion = 0
+    ng_fp = 0
+    ng_blur = 0
+    ng_others = 0
+
+    wrong_out = 0
+
+    is_miss_in = 0
+    is_miss_out = 0
+
+    resend = 0
+    is_occupied_last = False
+
+    for info in infos:
+        if info.is_occupied:
+            detect_all += 1
+
+            if is_occupied_last:
+                resend += 1
+
+            if info.is_miss_in:
+                is_miss_in += 1
+            if info.is_miss_out:
+                is_miss_out += 1
+
+            if info.status == Status.OK:
+                detect_ok += 1
+            elif info.status == Status.NG_Out:
+                ng_out += 1
+            elif info.status == Status.NG_Shadow:
+                ng_shadow += 1
+            elif info.status == Status.NG_Occlusion:
+                ng_occlusion += 1
+            elif info.status == Status.NG_FP:
+                ng_fp += 1  
+            elif info.status == Status.NG_Blur:
+                ng_blur += 1
+            elif info.status == Status.NG_Others:
+                ng_others += 1
+            elif info.status == Status.Wrong_Out:
+                wrong_out += 1
+        
+        is_occupied_last = info.is_occupied
+
+
+    path = os.path.join(path, 'eval.csv')
+    with open(path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerows([
+                ['検知総数', detect_all],
+                ['車両総数', detect_all - wrong_out - ng_fp - resend + is_miss_out],
+                ['入庫見逃し', is_miss_in],
+                ['出庫見逃し', is_miss_out],
+                ['誤出庫', wrong_out],
+                ['全桁OK', detect_ok],
+                ['全桁NG', ng_out + ng_shadow + ng_occlusion + ng_fp + ng_blur + ng_others],
+                ['全桁NG（見切れ）', ng_out],
+                ['全桁NG（影）', ng_shadow],
+                ['全桁NG（Occlusion）', ng_occlusion],
+                ['全桁NG（FP）', ng_fp],
+                ['全桁NG（Blur）', ng_blur],
+                ['全桁NG（その他）', ng_others],
+                ['再送回数', resend],
+                ['全桁精度（メタごと）', detect_ok / detect_all],
+                ['全桁精度（見切れ/FP抜き）', detect_ok / (detect_all - ng_fp, ng_out)]
+            ])
+            
+
         
 def load(path: str):
     meta_dir = os.path.join(path, 'META')
@@ -325,21 +469,22 @@ def load(path: str):
     
 
 if __name__ == "__main__":
-    path = 'sample_data/20250910'
+    path = '/Users/eigen/Desktop/20251007_車室監視_道玄坂２車室_1006_1013/CAM1/20251013'
     infos, lots = load(path)
 
     label_csv = os.path.join(path, 'label.csv')
-    with open(label_csv, newline='', encoding='utf-8') as f:
-        reader = csv.DictReader(f)
-        # header = next(reader)
-        for row in reader:
-            match = [info for info in infos if info.json_file == row['json']]
-            if len(match) == 1:
-                match[0].is_miss_in = bool(int(row['is_miss_in']))
-                match[0].is_miss_in = bool(int(row['is_miss_out']))
-                match[0].status = Status(int(row['status']))
-            else:
-                print(row['json'])
+    if os.path.exists(label_csv):
+        with open(label_csv, newline='', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            # header = next(reader)
+            for row in reader:
+                match = [info for info in infos if info.json_file == row['json']]
+                if len(match) == 1:
+                    match[0].is_miss_in = bool(int(row['is_miss_in']))
+                    match[0].is_miss_in = bool(int(row['is_miss_out']))
+                    match[0].status = Status(int(row['status']))
+                else:
+                    print(row['json'])
 
     app = QApplication(sys.argv)
     window = MainWidget(3, path, infos, lots)
