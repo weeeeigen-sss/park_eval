@@ -82,6 +82,7 @@ class ParkingInfo:
                 self.status = Status.NoLabel
                 self.is_miss_in = False
                 self.is_miss_out = False
+                self.is_gt_unknown = False
 
     def name(self):
         name = self.timestamp + '_' + self.lot
@@ -95,6 +96,9 @@ class ParkingInfo:
 
     def set_miss_out(self, miss_out):
         self.is_miss_out = miss_out
+
+    def set_gt_unknown(self, gt_unknown):
+        self.is_gt_unknown = gt_unknown
     
 
 class MainWidget(QMainWindow):
@@ -158,11 +162,17 @@ class MainWidget(QMainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Left:
-            self.info_index = len(self.filter_infos) - 1 if self.info_index <= 0 else self.info_index - 1
+            flag = self.info_index <= self.frames - 1
+            self.info_index = len(self.filter_infos) - 1 if flag else self.info_index - 1
             self.update_views()
+            if flag:
+                self.statusBar().showMessage('最後尾に移動しました')
         elif event.key() == Qt.Key.Key_Right:
-            self.info_index = 0 if self.info_index >= len(self.filter_infos) - 1 else self.info_index + 1
+            flag = self.info_index >= len(self.filter_infos) - 1
+            self.info_index = self.frames - 1 if flag else self.info_index + 1
             self.update_views()
+            if flag:
+                self.statusBar().showMessage('先頭に移動しました')
         else:
             super().keyPressEvent(event)  # 他のキーはデフォルト処理
 
@@ -185,6 +195,7 @@ class MainWidget(QMainWindow):
                     'is_occupied',
                     'is_miss_in',
                     'is_miss_out',
+                    'is_gt_unknown',
                     'status',
                     'status_label'
                     ])
@@ -196,6 +207,7 @@ class MainWidget(QMainWindow):
                         f'{info.is_occupied}', 
                         f'{int(info.is_miss_in)}',
                         f'{int(info.is_miss_out)}',
+                        f'{int(info.is_gt_unknown)}',
                         f'{info.status.value}',
                         f'{info.status}'
                         ])
@@ -208,7 +220,7 @@ class MainWidget(QMainWindow):
 
         wrong_out = 0
 
-        is_miss_in = is_miss_out = 0
+        is_miss_in = is_miss_out = is_gt_unknown = 0
 
         resend = 0
         is_occupied_last = False
@@ -228,6 +240,9 @@ class MainWidget(QMainWindow):
                         is_miss_in += 1
                     if info.is_miss_out:
                         is_miss_out += 1
+
+                    if info.is_gt_unknown:
+                        is_gt_unknown += 1
 
                     if info.status == Status.OK:
                         detect_ok += 1
@@ -266,6 +281,7 @@ class MainWidget(QMainWindow):
                     ['全桁NG（FP）', ng_fp],
                     ['全桁NG（Blur）', ng_blur],
                     ['全桁NG（その他）', ng_others],
+                    ['GT不明', is_gt_unknown],
                     ['再送回数', resend],
                     ['全桁精度（メタごと）', detect_ok / detect_all],
                     ['全桁精度（見切れ/FP抜き）', detect_ok / (detect_all - ng_fp - ng_out)]
@@ -303,6 +319,12 @@ class ParkWidget(QWidget):
             lambda index: self.info.set(Status(index))
         )
         layout.addWidget(self.combo)
+
+        self.gt_unknown = QCheckBox('GT不明')
+        self.gt_unknown.stateChanged.connect(
+            lambda check: self.info.set_gt_unknown(check == Qt.CheckState.Checked.value)
+        )
+        layout.addWidget(self.gt_unknown)
 
         self.miss_in = QCheckBox('入庫見逃し')
         self.miss_in.stateChanged.connect(
@@ -372,6 +394,7 @@ class ParkWidget(QWidget):
         self.json_label.setText(text)
 
         # Update status
+        self.gt_unknown.setChecked(info.is_gt_unknown)
         self.miss_in.setChecked(info.is_miss_in)
         self.miss_out.setChecked(info.is_miss_out)
         self.combo.setCurrentIndex(info.status.value)
@@ -385,9 +408,20 @@ class ParkWidget(QWidget):
         self.info_label.setText('')
         self.json_label.setText('')
 
-        self.miss_in.setChecked(False)
-        self.miss_out.setChecked(False)
-        self.combo.setCurrentIndex(0)
+        self.set_checked_wo_signal(self.gt_unknown, False)
+        self.set_checked_wo_signal(self.miss_in, False)
+        self.set_checked_wo_signal(self.miss_out, False)
+        self.set_current_index_wo_signal(self.combo, 0)
+
+    def set_checked_wo_signal(self, cb: QCheckBox, checkd: bool):
+        cb.blockSignals(True)
+        cb.setChecked(checkd)
+        cb.blockSignals(False)
+
+    def set_current_index_wo_signal(self, cb: QComboBox, index: int):
+        cb.blockSignals(True)
+        cb.setCurrentIndex(index)
+        cb.blockSignals(False)
 
         
 def load(path: str):
@@ -408,6 +442,7 @@ def load(path: str):
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    app.setStyleSheet("QWidget { font-size: 20pt; }")
 
     path = QFileDialog.getExistingDirectory(None, "フォルダを選択")
     if not path:
@@ -425,9 +460,17 @@ if __name__ == "__main__":
             for row in reader:
                 match = [info for info in infos if info.json_file == row['json']]
                 if len(match) == 1:
-                    match[0].is_miss_in = bool(int(row['is_miss_in']))
-                    match[0].is_miss_out = bool(int(row['is_miss_out']))
-                    match[0].status = Status(int(row['status']))
+                    if 'is_miss_in' in row:
+                        match[0].is_miss_in = bool(int(row['is_miss_in']))
+
+                    if 'is_miss_out' in row:
+                        match[0].is_miss_out = bool(int(row['is_miss_out']))
+
+                    if 'is_gt_unknown' in row:
+                        match[0].is_gt_unknown = bool(int(row['is_gt_unknown']))
+
+                    if 'status' in row:
+                        match[0].status = Status(int(row['status']))
                 else:
                     print(row['json'])
 
