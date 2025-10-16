@@ -2,15 +2,17 @@ import shutil
 from pathlib import Path
 
 # ルートフォルダを指定
-root = Path("/Users/Yusaku.Eigen/Desktop/20251007_車室監視_道玄坂２車室_1006_1013")
+root = Path("/Users/Yusaku.Eigen/Desktop/20250916_車室監視_道玄坂２車室_0915_0921")
 
 for target_name in ["IT", "META", "RAW"]:
     # target_name = "eval"  # まとめたいフォルダ名
     output_dir = root / "merged" / target_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    target_dir = root / "CAM1"
+
     # 再帰的に eval フォルダを探す
-    for src in root.rglob(target_name):
+    for src in target_dir.rglob(target_name):
         if src.is_dir() and src.name == target_name:
             print(f"コピー中: {src}")
             # 各フォルダ内の全ファイルをコピー

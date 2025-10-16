@@ -2,7 +2,10 @@ import os
 
 from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication
 
+
+from app.types import Status, text_for
 from app.models.parking_info import ParkingInfo
 from app.views.park_widget import ParkWidget
 from app.controllers.data_manager import load, save_label, save_eval
@@ -45,9 +48,17 @@ class MainWidget(QMainWindow):
         self.eval_button.clicked.connect(self.save_eval)
         toolbar.addWidget(self.eval_button)
 
+        self.filter_combo = QComboBox()
+        self.filter_combo.currentIndexChanged.connect(self.on_status_combo_changed)
+        self.filter_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し'] + [text_for(status) for status in Status])
+        toolbar.addWidget(self.filter_combo)
+
         # self.setLayout(layout)
         self.setCentralWidget(central)
         self.setWindowTitle("park_eval")
+
+        # Shortcuts
+        self.configure_shortcuts()
 
     def load(self):
         path = QFileDialog.getExistingDirectory(None, "フォルダを選択")
@@ -62,6 +73,10 @@ class MainWidget(QMainWindow):
         self.filter_infos = infos
         self.lots = lots
         self.info_index = self.frames - 1
+
+        self.filter_indices: list[int] = None
+        self.filter_index = 0
+        self.filter_combo.currentIndex = 0
 
         self.path = path
         self.it_dir = os.path.join(path, 'IT')
@@ -87,20 +102,52 @@ class MainWidget(QMainWindow):
             self.info_index = self.frames - 1
             self.update_views()
 
+    def on_status_combo_changed(self, index):
+        if index == 0:
+            self.filter_indices = None
+        else:
+            if index == 1:
+                self.filter_indices = [i for i, info in enumerate(self.infos) if info.is_gt_unknown == True]
+            elif index == 2:
+                self.filter_indices = [i for i, info in enumerate(self.infos) if info.is_miss_in == True]
+            elif index == 3:
+                self.filter_indices = [i for i, info in enumerate(self.infos) if info.is_miss_out == True]
+            else:
+                self.filter_indices = [i for i, info in enumerate(self.infos) if info.status == Status(index - 4)]
+
+            self.filter_index = 0
+            self.info_index = self.filter_indices[self.filter_index]
+            self.update_views()
+
+
     def keyPressEvent(self, event):
         if len(self.infos) > 0:
             if event.key() == Qt.Key.Key_Left:
-                flag = self.info_index <= self.frames - 1
-                self.info_index = len(self.filter_infos) - 1 if flag else self.info_index - 1
-                self.update_views()
-                if flag:
-                    self.statusBar().showMessage('最後尾に移動しました')
+                if self.filter_indices != None:
+                    flag = self.filter_index <= len(self.filter_indices) - 1
+                    self.filter_index = len(self.filter_indices) - 1 if flag else self.filter_index - 1
+                    
+                    self.info_index = self.filter_indices[self.filter_index]
+                    self.update_views()
+                else:
+                    flag = self.info_index <= self.frames - 1
+                    self.info_index = len(self.filter_infos) - 1 if flag else self.info_index - 1
+                    self.update_views()
+                    if flag:
+                        self.statusBar().showMessage('最後尾に移動しました')
             elif event.key() == Qt.Key.Key_Right:
-                flag = self.info_index >= len(self.filter_infos) - 1
-                self.info_index = self.frames - 1 if flag else self.info_index + 1
-                self.update_views()
-                if flag:
-                    self.statusBar().showMessage('先頭に移動しました')
+                if self.filter_indices != None:
+                    flag = self.filter_index >= len(self.filter_indices) - 1
+                    self.filter_index = 0 if flag else self.filter_index + 1
+
+                    self.info_index = self.filter_indices[self.filter_index]
+                    self.update_views()
+                else:
+                    flag = self.info_index >= len(self.filter_infos) - 1
+                    self.info_index = self.frames - 1 if flag else self.info_index + 1
+                    self.update_views()
+                    if flag:
+                        self.statusBar().showMessage('先頭に移動しました')
         else:
             super().keyPressEvent(event)  # 他のキーはデフォルト処理
 
@@ -126,6 +173,18 @@ class MainWidget(QMainWindow):
         
         path = save_eval(self.path, self.lots, self.infos)
         self.statusBar().showMessage(f'Saved eval: {path}')
+
+    def configure_shortcuts(self):
+        shortcut = QShortcut(QKeySequence("Ctrl+C"), self)
+        shortcut.activated.connect(self.copy_screenshot)
+
+    def copy_screenshot(self):
+        # ウィンドウ全体をキャプチャ
+        pixmap = self.grab()
+
+        # クリップボードにコピー
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setPixmap(pixmap)
 
          
         
