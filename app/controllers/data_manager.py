@@ -21,7 +21,7 @@ def load(path: str):
     # Load label csv
     label_csv = os.path.join(path, 'label.csv')
     if os.path.exists(label_csv):
-        with open(label_csv, newline='', encoding='utf-8') as f:
+        with open(label_csv, newline='', encoding='utf-8-sig') as f:
             reader = csv.DictReader(f)
             # header = next(reader)
             for row in reader:
@@ -47,7 +47,7 @@ def load(path: str):
 
 def save_label(path: str, infos: list[ParkingInfo]):
     path = os.path.join(path, 'label.csv')
-    with open(path, 'w', newline='', encoding='utf-8') as f:
+    with open(path, 'w', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f)
         writer.writerow(
             [
