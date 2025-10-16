@@ -7,6 +7,7 @@ from PyQt6.QtCore import Qt
 
 from app.models.parking_info import ParkingInfo
 from app.types import Status, text_for
+from app.utlis import parse_timestamp, format_jst, diff_timestamp
 
 class ParkWidget(QWidget):
     def __init__(self):
@@ -22,17 +23,18 @@ class ParkWidget(QWidget):
         self.raw_label = QLabel()
         layout.addWidget(self.raw_label)
 
+        self.plate_label = QLabel()
+        self.plate_label.setFixedSize(309, 159)
+        self.plate_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(self.plate_label)
+
         mid_layout = QHBoxLayout()
         self.vehicle_label = QLabel()
-        mid_layout.addWidget(self.vehicle_label)
-
-        mid_right_layout = QVBoxLayout()
-        self.plate_label = QLabel()
-        mid_right_layout.addWidget(self.plate_label)
+        self.vehicle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        mid_layout.addWidget(self.vehicle_label)        
 
         self.json_label = QLabel()
-        mid_right_layout.addWidget(self.json_label)
-        mid_layout.addLayout(mid_right_layout)
+        mid_layout.addWidget(self.json_label)
 
         layout.addLayout(mid_layout)
 
@@ -53,8 +55,6 @@ class ParkWidget(QWidget):
         self.miss_out.stateChanged.connect(self.on_miss_out_changed)
         layout.addWidget(self.miss_out)
 
-
-        # レイアウトをウィジェットにセット
         self.setLayout(layout)
 
     def on_combo_changed(self, index):
@@ -77,14 +77,15 @@ class ParkWidget(QWidget):
         info = infos[index]
         self.info = info
 
-        # Update image
+        # Update images
         path = os.path.join(it_dir, info.name() + '_plate.bmp')
         if os.path.exists(path):
             plate_pixmap = QPixmap(path)
             p_scaled_pixmap = plate_pixmap.scaled(plate_pixmap.width(), plate_pixmap.height(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.plate_label.setPixmap(p_scaled_pixmap)
         else:
-            self.plate_label.setPixmap(QPixmap())
+            self.plate_label.clear()
+            self.plate_label.setText('No Image')
 
         path = os.path.join(it_dir, info.name() + '_vehicle.jpg')
         if os.path.exists(path):
@@ -92,21 +93,36 @@ class ParkWidget(QWidget):
             v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 4, vehicle_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.vehicle_label.setPixmap(v_scaled_pixmap)
         else:
-            self.vehicle_label.setPixmap(QPixmap())
-            
+            self.vehicle_label.clear()
+            self.vehicle_label.setText('No Image')
+
         path = os.path.join(raw_dir, info.name() + '_raw.jpg')
         if os.path.exists(path):
             raw_pixmap = QPixmap(path)  
             scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 5, raw_pixmap.height() // 5, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.raw_label.setPixmap(scaled_pixmap)
         else:
-            self.raw_label.setPixmap(QPixmap())
+            self.raw_label.clear()
+            self.raw_label.setText('No Image')
 
-        # Update text
-        self.info_label.setText(f'<b>{index} / {len(infos) - 1} (Lot: {info.lot})</b><br><br>' + \
+
+        # Update info label
+        text = f'<b>{index} / {len(infos) - 1} (Lot: {info.lot})</b><br><br>' + \
             f'{info.json_file}<br>' + \
-            f'TimeStamp: {info.timestamp}')
+            f'TimeStamp: {info.timestamp}<br><br>' + \
+            f'日本時間: {format_jst(parse_timestamp(info.timestamp))}'
+        if index > 0:
+            hours, minutes, seconds = diff_timestamp(infos[index - 1].timestamp, info.timestamp)
+            if hours > 0:
+                text += f'（+ {int(hours)}時間{int(minutes)}分{seconds:.0f}秒）'
+            elif minutes > 0:
+                text += f'（+ {int(minutes)}分{seconds:.0f}秒）'
+            else:
+                text += f'（+ {seconds:.0f}秒）'
+
+        self.info_label.setText(text)
         
+        # Update json label
         color = "red" if index > 0 and info.is_occupied != infos[index - 1].is_occupied else "white"
         text = f'<font color="{color}">Is_Occupied: {info.is_occupied}</font><br>'
 

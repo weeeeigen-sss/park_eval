@@ -7,7 +7,7 @@ from app.views.main_widget import MainWidget
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    # app.setStyleSheet("QWidget { font-size: 20pt; }")
+    # app.setStyleSheet("QWidget { font-size: 24pt; }")
 
     window = MainWidget(3)
     window.show()
