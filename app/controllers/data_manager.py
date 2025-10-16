@@ -87,17 +87,20 @@ def save_eval(path: str, lots, infos: list[ParkingInfo]):
         for info in infos:
             if info.lot != lot:
                 continue
+
+            if info.status == Status.Wrong_Out:
+                wrong_out += 1
+
+            if info.is_miss_in:
+                is_miss_in += 1
+            if info.is_miss_out:
+                is_miss_out += 1
             
             if info.is_occupied:
                 detect_all += 1
 
                 if is_occupied_last:
                     resend += 1
-
-                if info.is_miss_in:
-                    is_miss_in += 1
-                if info.is_miss_out:
-                    is_miss_out += 1
 
                 if info.is_gt_unknown:
                     is_gt_unknown += 1
@@ -116,10 +119,11 @@ def save_eval(path: str, lots, infos: list[ParkingInfo]):
                     ng_blur += 1
                 elif info.status == Status.NG_Others:
                     ng_others += 1
-                elif info.status == Status.Wrong_Out:
-                    wrong_out += 1
             
             is_occupied_last = info.is_occupied
+
+            if info.status == Status.NoLabel:
+                print('No label data exists.')
 
 
     path = os.path.join(path, 'eval.csv')
