@@ -5,6 +5,7 @@ from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
 
 
+from app.views.image_label import ClickableImageLabel
 from app.models.parking_info import ParkingInfo
 from app.types import Status, text_for
 from app.utlis import parse_timestamp, format_jst, diff_timestamp
@@ -23,7 +24,7 @@ class ParkWidget(QWidget):
         self.raw_label = QLabel()
         layout.addWidget(self.raw_label)
 
-        self.plate_label = QLabel()
+        self.plate_label = ClickableImageLabel()
         self.plate_label.setFixedSize(309, 159)
         self.plate_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.plate_label)
@@ -79,13 +80,14 @@ class ParkWidget(QWidget):
 
         # Update images
         path = os.path.join(it_dir, info.name() + '_plate.bmp')
-        if os.path.exists(path):
-            plate_pixmap = QPixmap(path)
-            p_scaled_pixmap = plate_pixmap.scaled(plate_pixmap.width(), plate_pixmap.height(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            self.plate_label.setPixmap(p_scaled_pixmap)
-        else:
-            self.plate_label.clear()
-            self.plate_label.setText('No Image')
+        self.plate_label.set(path)
+        # if os.path.exists(path):
+        #     plate_pixmap = QPixmap(path)
+        #     p_scaled_pixmap = plate_pixmap.scaled(plate_pixmap.width(), plate_pixmap.height(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        #     self.plate_label.setPixmap(p_scaled_pixmap)
+        # else:
+        #     self.plate_label.clear()
+        #     self.plate_label.setText('No Image')
 
         path = os.path.join(it_dir, info.name() + '_vehicle.jpg')
         if os.path.exists(path):
