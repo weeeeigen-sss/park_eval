@@ -11,13 +11,8 @@ class ClickableImageLabel(QLabel):
         super().__init__()
 
         self.scale = scale
-
-        # self.image_path = Path(image_path)
-
-        # # 画像をセット
-        # pixmap = QPixmap(str(self.image_path))
-        # self.setPixmap(pixmap)
-        # self.setScaledContents(True)  # QLabelサイズにスケール
+        self.image_path = None
+        
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))  # 手のアイコンに変更
 
     def set(self, image_path: str):
@@ -31,7 +26,9 @@ class ClickableImageLabel(QLabel):
             self.setText('No Image')
             
     def mousePressEvent(self, event):
-        if event.button() == Qt.LeftButton and self.image_path.exists():
+        if self.image_path is None:
+            return
+        if event.button() == Qt.MouseButton.LeftButton and self.image_path.exists():
             # Finderで選択状態で開く（macOS専用）
             subprocess.run(["open", "-R", str(self.image_path)])
         super().mousePressEvent(event)

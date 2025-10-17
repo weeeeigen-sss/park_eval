@@ -1,6 +1,6 @@
 import os
 
-from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog
+from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog, QLabel
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication
 
@@ -53,6 +53,9 @@ class MainWidget(QMainWindow):
         self.filter_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し'] + [text_for(status) for status in Status])
         toolbar.addWidget(self.filter_combo)
 
+        self.filter_index_label = QLabel()
+        toolbar.addWidget(self.filter_index_label)
+
         # self.setLayout(layout)
         self.setCentralWidget(central)
         self.setWindowTitle("park_eval")
@@ -76,7 +79,7 @@ class MainWidget(QMainWindow):
 
         self.filter_indices: list[int] = None
         self.filter_index = 0
-        self.filter_combo.currentIndex = 0
+        self.filter_combo.setCurrentIndex(0)
 
         self.path = path
         self.it_dir = os.path.join(path, 'IT')
@@ -101,6 +104,12 @@ class MainWidget(QMainWindow):
             self.filter_infos = [info for info in self.infos if info.lot == self.lots[index - 1]]
             self.info_index = self.frames - 1
             self.update_views()
+            # if self.filter_indices == None:
+            #     self.info_index = self.frames - 1
+            #     self.update_views()
+            # else:
+            #     self.on_status_combo_changed(self.filter_combo.currentIndex())
+
 
     def on_status_combo_changed(self, index):
         if index == 0:
@@ -115,8 +124,13 @@ class MainWidget(QMainWindow):
             else:
                 self.filter_indices = [i for i, info in enumerate(self.infos) if info.status == Status(index - 4)]
 
+            if len(self.filter_indices) == 0:
+                self.filter_combo.setCurrentIndex(0)
+                return
+
             self.filter_index = 0
             self.info_index = self.filter_indices[self.filter_index]
+
             self.update_views()
 
 
@@ -124,7 +138,7 @@ class MainWidget(QMainWindow):
         if len(self.infos) > 0:
             if event.key() == Qt.Key.Key_Left:
                 if self.filter_indices != None:
-                    flag = self.filter_index <= len(self.filter_indices) - 1
+                    flag = self.filter_index <= 0
                     self.filter_index = len(self.filter_indices) - 1 if flag else self.filter_index - 1
                     
                     self.info_index = self.filter_indices[self.filter_index]
@@ -152,13 +166,18 @@ class MainWidget(QMainWindow):
             super().keyPressEvent(event)  # 他のキーはデフォルト処理
 
     def update_views(self):
+        if self.filter_indices != None:
+            self.filter_index_label.setText(f'({self.filter_index + 1} / {len(self.filter_indices)})')
+        else:
+            self.filter_index_label.setText('')
+
         for i in range(0, self.frames):
             index = self.info_index - self.frames + 1 + i
             if 0 <= index < len(self.filter_infos):
                 self.park_widgets[i].set_info(self.filter_infos, index, self.it_dir, self.raw_dir)
-            else:
+            # else:
                 # self.park_widgets[i].set_empty()
-                print('Wrong Index:' + index)
+                # print('Wrong Index:' + str(index))
 
     def save_label(self):
         if not self.path:

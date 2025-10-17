@@ -1,7 +1,7 @@
 import os
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QCheckBox
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QCheckBox, QPushButton
+from PyQt6.QtGui import QPixmap, QGuiApplication
 from PyQt6.QtCore import Qt
 
 
@@ -21,7 +21,11 @@ class ParkWidget(QWidget):
         self.info_label = QLabel()
         layout.addWidget(self.info_label)
 
-        self.raw_label = QLabel()
+        self.time_button = QPushButton('Copy Timestamp（日本時間）')
+        self.time_button.clicked.connect(self.on_time_clicked)
+        layout.addWidget(self.time_button)
+
+        self.raw_label = ClickableImageLabel(5)
         layout.addWidget(self.raw_label)
 
         self.plate_label = ClickableImageLabel()
@@ -30,12 +34,20 @@ class ParkWidget(QWidget):
         layout.addWidget(self.plate_label)
 
         mid_layout = QHBoxLayout()
-        self.vehicle_label = QLabel()
+        self.vehicle_label = ClickableImageLabel(4)
         self.vehicle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         mid_layout.addWidget(self.vehicle_label)        
 
+        mid_right_layout = QVBoxLayout()
+
         self.json_label = QLabel()
-        mid_layout.addWidget(self.json_label)
+        mid_right_layout.addWidget(self.json_label)
+
+        self.lp_button = QPushButton('Copy LP')
+        self.lp_button.clicked.connect(self.on_lp_clicked)
+        mid_right_layout.addWidget(self.lp_button)
+
+        mid_layout.addLayout(mid_right_layout)
 
         layout.addLayout(mid_layout)
 
@@ -74,6 +86,18 @@ class ParkWidget(QWidget):
         if self.info is not None:
             self.info.set_miss_out(check == Qt.CheckState.Checked.value)
 
+    def on_time_clicked(self):
+        if self.info is not None:
+            clipboard = QGuiApplication.clipboard()
+            text = f'{format_jst(parse_timestamp(self.info.timestamp))}'
+            clipboard.setText(text)
+
+    def on_lp_clicked(self):
+        if self.info is not None:
+            clipboard = QGuiApplication.clipboard()
+            text = str(self.info.lpr_top) + '\n' + str(self.info.lpr_bottom)
+            clipboard.setText(text)
+
     def set_info(self, infos: list[ParkingInfo], index: int, it_dir: str, raw_dir: str):
         info = infos[index]
         self.info = info
@@ -90,22 +114,24 @@ class ParkWidget(QWidget):
         #     self.plate_label.setText('No Image')
 
         path = os.path.join(it_dir, info.name() + '_vehicle.jpg')
-        if os.path.exists(path):
-            vehicle_pixmap = QPixmap(path)
-            v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 4, vehicle_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            self.vehicle_label.setPixmap(v_scaled_pixmap)
-        else:
-            self.vehicle_label.clear()
-            self.vehicle_label.setText('No Image')
+        self.vehicle_label.set(path)
+        # if os.path.exists(path):
+        #     vehicle_pixmap = QPixmap(path)
+        #     v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 4, vehicle_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        #     self.vehicle_label.setPixmap(v_scaled_pixmap)
+        # else:
+        #     self.vehicle_label.clear()
+        #     self.vehicle_label.setText('No Image')
 
         path = os.path.join(raw_dir, info.name() + '_raw.jpg')
-        if os.path.exists(path):
-            raw_pixmap = QPixmap(path)  
-            scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 5, raw_pixmap.height() // 5, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            self.raw_label.setPixmap(scaled_pixmap)
-        else:
-            self.raw_label.clear()
-            self.raw_label.setText('No Image')
+        self.raw_label.set(path)
+        # if os.path.exists(path):
+        #     raw_pixmap = QPixmap(path)  
+        #     scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 5, raw_pixmap.height() // 5, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+        #     self.raw_label.setPixmap(scaled_pixmap)
+        # else:
+        #     self.raw_label.clear()
+        #     self.raw_label.setText('No Image')
 
 
         # Update info label
