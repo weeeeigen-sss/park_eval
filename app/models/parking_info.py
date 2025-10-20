@@ -18,6 +18,7 @@ class ParkingInfo:
                     continue
                 self.lot = info["Lot"]
                 self.timestamp = str(info.get("TimeStamp"))
+                self.json_path = json_path
                 self.json_file = os.path.basename(json_path)
 
                 self.is_occupied = info.get("Is_Occupied")
@@ -34,9 +35,21 @@ class ParkingInfo:
                 self.plate_confidence = info.get("Plate_Confidence")
 
                 lpd_bbox = info.get("LPD_Bbox", {})
+                self.plate_xmin = lpd_bbox.get("xmin")
+                self.plate_ymin = lpd_bbox.get("ymin")
+                self.plate_xmax = lpd_bbox.get("xmax")
+                self.plate_ymax = lpd_bbox.get("ymax")
+                self.plate_width = lpd_bbox.get("width")
+                self.plate_height = lpd_bbox.get("height")
                 self.plate_score = lpd_bbox.get("score")
 
                 vehicle_bbox = info.get("Vehicle_Bbox", {})
+                self.vehicle_xmin = vehicle_bbox.get("xmin")
+                self.vehicle_ymin = vehicle_bbox.get("ymin")
+                self.vehicle_xmax = vehicle_bbox.get("xmax")
+                self.vehicle_ymax = vehicle_bbox.get("ymax")
+                self.vehicle_wdith = vehicle_bbox.get("width")
+                self.vehicle_height = vehicle_bbox.get("height")
                 self.vehicle_score = vehicle_bbox.get("score")
 
                 self.status = Status.NoLabel

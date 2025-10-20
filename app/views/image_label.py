@@ -21,6 +21,7 @@ class ClickableImageLabel(QLabel):
             pixmap = QPixmap(str(self.image_path))
             scaled_pixmap = pixmap.scaled(pixmap.width() // self.scale, pixmap.height() // self.scale, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.setPixmap(scaled_pixmap)
+            self.setToolTip("Reveal in Finder")
         else:
             self.clear()
             self.setText('No Image')

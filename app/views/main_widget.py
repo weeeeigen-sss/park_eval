@@ -37,7 +37,7 @@ class MainWidget(QMainWindow):
 
         # ドロップダウン（コンボボックス）を作ってツールバーに追加
         self.lot_combo = QComboBox()
-        self.lot_combo.currentIndexChanged.connect(self.on_lot_combo_changed)
+        self.lot_combo.currentIndexChanged.connect(self.update_index)
         toolbar.addWidget(self.lot_combo)
 
         self.save_button = QPushButton('Save')
@@ -49,8 +49,8 @@ class MainWidget(QMainWindow):
         toolbar.addWidget(self.eval_button)
 
         self.filter_combo = QComboBox()
-        self.filter_combo.currentIndexChanged.connect(self.on_status_combo_changed)
         self.filter_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し'] + [text_for(status) for status in Status])
+        self.filter_combo.currentIndexChanged.connect(self.update_index)
         toolbar.addWidget(self.filter_combo)
 
         self.filter_index_label = QLabel()
@@ -70,6 +70,9 @@ class MainWidget(QMainWindow):
             return
 
         infos, lots = load(path)
+        if not infos:
+            print("No data founded.")
+            return
         
         # Configure
         self.infos = infos
@@ -87,42 +90,34 @@ class MainWidget(QMainWindow):
 
         self.lot_combo.clear()
         self.lot_combo.addItems(['All'] + self.lots)
-        self.on_lot_combo_changed(0)
+        # self.on_lot_combo_changed(0)
 
-        self.update_views()
+        self.update_index()
+        # self.update_views()
 
         self.statusBar().showMessage(f'Load: {path}')
 
+    def update_index(self):
+        lot_index = self.lot_combo.currentIndex()
+        filter_index = self.filter_combo.currentIndex()
 
-    
-    def on_lot_combo_changed(self, index):
-        if index == 0:
+        if lot_index == 0:
             self.filter_infos = self.infos
-            self.info_index = self.frames - 1
-            self.update_views()
         else:
-            self.filter_infos = [info for info in self.infos if info.lot == self.lots[index - 1]]
-            self.info_index = self.frames - 1
-            self.update_views()
-            # if self.filter_indices == None:
-            #     self.info_index = self.frames - 1
-            #     self.update_views()
-            # else:
-            #     self.on_status_combo_changed(self.filter_combo.currentIndex())
+            self.filter_infos = [info for info in self.infos if info.lot == self.lots[lot_index - 1]]
 
-
-    def on_status_combo_changed(self, index):
-        if index == 0:
+        if filter_index == 0:
             self.filter_indices = None
+            self.info_index = self.frames - 1
         else:
-            if index == 1:
-                self.filter_indices = [i for i, info in enumerate(self.infos) if info.is_gt_unknown == True]
-            elif index == 2:
-                self.filter_indices = [i for i, info in enumerate(self.infos) if info.is_miss_in == True]
-            elif index == 3:
-                self.filter_indices = [i for i, info in enumerate(self.infos) if info.is_miss_out == True]
+            if filter_index == 1:
+                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.is_gt_unknown == True]
+            elif filter_index == 2:
+                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.is_miss_in == True]
+            elif filter_index == 3:
+                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.is_miss_out == True]
             else:
-                self.filter_indices = [i for i, info in enumerate(self.infos) if info.status == Status(index - 4)]
+                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.status == Status(filter_index - 4)]
 
             if len(self.filter_indices) == 0:
                 self.filter_combo.setCurrentIndex(0)
@@ -131,7 +126,10 @@ class MainWidget(QMainWindow):
             self.filter_index = 0
             self.info_index = self.filter_indices[self.filter_index]
 
-            self.update_views()
+        self.update_views()
+
+
+        
 
 
     def keyPressEvent(self, event):

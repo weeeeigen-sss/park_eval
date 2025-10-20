@@ -7,6 +7,9 @@ from app.types import Status
 def load(path: str):
     # Load metadata json
     meta_dir = os.path.join(path, 'META')
+    if not os.path.exists(meta_dir):
+        return None, None
+    
     json_files = [f for f in os.listdir(meta_dir) if f.endswith(".json")]
     json_files.sort()
 
@@ -54,6 +57,30 @@ def save_label(path: str, infos: list[ParkingInfo]):
                 'json',
                 'lot',
                 'is_occupied',
+
+                'vehicle_xmin',
+                'vehicle_ymin',
+                'vehicle_xmax',
+                'vehicle_ymax',
+                'vehicle_wdith',
+                'vehicle_height',
+                'vehicle_score',
+
+                'lpr_top',
+                'top_quality',
+                'lpr_bottom',
+                'bottom_quality',
+
+                'plate_xmin',
+                'plate_ymin',
+                'plate_xmax',
+                'plate_ymax',
+                'plate_width',
+                'plate_height',
+                'plate_score',
+
+                'plate_confidence',
+
                 'is_miss_in',
                 'is_miss_out',
                 'is_gt_unknown',
@@ -65,7 +92,31 @@ def save_label(path: str, infos: list[ParkingInfo]):
                 [
                     f'{info.json_file}',
                     f'{info.lot}', 
-                    f'{info.is_occupied}', 
+                    f'{int(info.is_occupied)}', 
+
+                    f'{info.vehicle_xmin}',
+                    f'{info.vehicle_ymin}',
+                    f'{info.vehicle_xmax}',
+                    f'{info.vehicle_ymax}',
+                    f'{info.vehicle_wdith}',
+                    f'{info.vehicle_height}',
+                    f'{info.vehicle_score}',
+
+                    f'{info.lpr_top}',
+                    f'{info.top_quality}',
+                    f'{info.lpr_bottom}',
+                    f'{info.bottom_quality}',
+
+                    f'{info.plate_xmin}',
+                    f'{info.plate_ymin}',
+                    f'{info.plate_xmax}',
+                    f'{info.plate_ymax}',
+                    f'{info.plate_width}',
+                    f'{info.plate_height}',
+                    f'{info.plate_score}',
+
+                    f'{info.plate_confidence}',
+
                     f'{int(info.is_miss_in)}',
                     f'{int(info.is_miss_out)}',
                     f'{int(info.is_gt_unknown)}',

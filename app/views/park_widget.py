@@ -1,7 +1,8 @@
 import os
+import subprocess
 
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QCheckBox, QPushButton
-from PyQt6.QtGui import QPixmap, QGuiApplication
+from PyQt6.QtGui import QPixmap, QGuiApplication, QIcon
 from PyQt6.QtCore import Qt
 
 
@@ -18,30 +19,80 @@ class ParkWidget(QWidget):
 
         layout = QVBoxLayout()
 
+        # Info
         self.info_label = QLabel()
         layout.addWidget(self.info_label)
 
-        self.time_button = QPushButton('Copy Timestamp（日本時間）')
-        self.time_button.clicked.connect(self.on_time_clicked)
-        layout.addWidget(self.time_button)
+        # Json
+        json_row = QHBoxLayout()
+        self.json_label = QLabel()
+        json_row.addWidget(self.json_label)
 
+        self.json_copy = QPushButton()
+        self.json_copy.setIcon(QIcon.fromTheme("document-open"))
+        self.json_copy.setFixedSize(24, 24)
+        self.json_copy.setToolTip("Reveal in Finder")
+        self.json_copy.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.json_copy.clicked.connect(self.on_json_clicked)
+        json_row.addWidget(self.json_copy)
+
+        json_row.addStretch()
+        layout.addLayout(json_row)
+
+        # Timestamp
+        timestamp_row = QHBoxLayout()
+        self.timestamp_label = QLabel()
+        timestamp_row.addWidget(self.timestamp_label)
+
+        self.timestamp_copy = QPushButton()
+        self.timestamp_copy.setIcon(QIcon.fromTheme("edit-copy"))
+        self.timestamp_copy.setFixedSize(24, 24)
+        self.timestamp_copy.setToolTip("Copy Timestamp")
+        self.timestamp_copy.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.timestamp_copy.clicked.connect(self.on_time_clicked)
+        timestamp_row.addWidget(self.timestamp_copy)
+
+        timestamp_row.addStretch()
+        layout.addLayout(timestamp_row)
+
+        # JST
+        jst_row = QHBoxLayout()
+        self.jst_label = QLabel()
+        jst_row.addWidget(self.jst_label)
+
+        self.jst_copy = QPushButton()
+        self.jst_copy.setIcon(QIcon.fromTheme("edit-copy"))
+        self.jst_copy.setFixedSize(24, 24)
+        self.jst_copy.setToolTip("Copy JST")
+        self.jst_copy.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.jst_copy.clicked.connect(self.on_jst_clicked)
+        jst_row.addWidget(self.jst_copy)
+
+        jst_row.addStretch()
+        layout.addLayout(jst_row)
+
+        # RAW Image
         self.raw_label = ClickableImageLabel(5)
         layout.addWidget(self.raw_label)
 
+        # Plate Image
         self.plate_label = ClickableImageLabel()
         self.plate_label.setFixedSize(309, 159)
         self.plate_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(self.plate_label)
 
         mid_layout = QHBoxLayout()
+
+        # Vehicle Image
         self.vehicle_label = ClickableImageLabel(4)
         self.vehicle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         mid_layout.addWidget(self.vehicle_label)        
 
         mid_right_layout = QVBoxLayout()
 
-        self.json_label = QLabel()
-        mid_right_layout.addWidget(self.json_label)
+        # Param
+        self.param_label = QLabel()
+        mid_right_layout.addWidget(self.param_label)
 
         self.lp_button = QPushButton('Copy LP')
         self.lp_button.clicked.connect(self.on_lp_clicked)
@@ -51,22 +102,28 @@ class ParkWidget(QWidget):
 
         layout.addLayout(mid_layout)
 
+        # Status combo
         self.combo = QComboBox()
         self.combo.addItems([text_for(status) for status in Status])
         self.combo.currentIndexChanged.connect(self.on_combo_changed)
         layout.addWidget(self.combo)
 
+        # Option checkboxs
+        option_layout = QHBoxLayout()
+
         self.gt_unknown = QCheckBox('GT不明')
         self.gt_unknown.stateChanged.connect(self.on_gt_unknown_changed)
-        layout.addWidget(self.gt_unknown)
+        option_layout.addWidget(self.gt_unknown)
 
         self.miss_in = QCheckBox('入庫見逃し')
         self.miss_in.stateChanged.connect(self.on_miss_in_changed)
-        layout.addWidget(self.miss_in)
+        option_layout.addWidget(self.miss_in)
 
         self.miss_out = QCheckBox('出庫見逃し')
         self.miss_out.stateChanged.connect(self.on_miss_out_changed)
-        layout.addWidget(self.miss_out)
+        option_layout.addWidget(self.miss_out)
+
+        layout.addLayout(option_layout)
 
         self.setLayout(layout)
 
@@ -86,7 +143,19 @@ class ParkWidget(QWidget):
         if self.info is not None:
             self.info.set_miss_out(check == Qt.CheckState.Checked.value)
 
+    def on_json_clicked(self):
+        if self.info is not None:
+            if os.path.exists(self.info.json_path):
+                # Finderで選択状態で開く（macOS専用）
+                subprocess.run(["open", "-R", str(self.info.json_path)])
+
     def on_time_clicked(self):
+        if self.info is not None:
+            clipboard = QGuiApplication.clipboard()
+            text = f'{self.info.timestamp}'
+            clipboard.setText(text)
+
+    def on_jst_clicked(self):
         if self.info is not None:
             clipboard = QGuiApplication.clipboard()
             text = f'{format_jst(parse_timestamp(self.info.timestamp))}'
@@ -105,40 +174,20 @@ class ParkWidget(QWidget):
         # Update images
         path = os.path.join(it_dir, info.name() + '_plate.bmp')
         self.plate_label.set(path)
-        # if os.path.exists(path):
-        #     plate_pixmap = QPixmap(path)
-        #     p_scaled_pixmap = plate_pixmap.scaled(plate_pixmap.width(), plate_pixmap.height(), Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        #     self.plate_label.setPixmap(p_scaled_pixmap)
-        # else:
-        #     self.plate_label.clear()
-        #     self.plate_label.setText('No Image')
 
         path = os.path.join(it_dir, info.name() + '_vehicle.jpg')
         self.vehicle_label.set(path)
-        # if os.path.exists(path):
-        #     vehicle_pixmap = QPixmap(path)
-        #     v_scaled_pixmap = vehicle_pixmap.scaled(vehicle_pixmap.width() // 4, vehicle_pixmap.height() // 4, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        #     self.vehicle_label.setPixmap(v_scaled_pixmap)
-        # else:
-        #     self.vehicle_label.clear()
-        #     self.vehicle_label.setText('No Image')
 
         path = os.path.join(raw_dir, info.name() + '_raw.jpg')
         self.raw_label.set(path)
-        # if os.path.exists(path):
-        #     raw_pixmap = QPixmap(path)  
-        #     scaled_pixmap = raw_pixmap.scaled(raw_pixmap.width() // 5, raw_pixmap.height() // 5, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-        #     self.raw_label.setPixmap(scaled_pixmap)
-        # else:
-        #     self.raw_label.clear()
-        #     self.raw_label.setText('No Image')
 
 
         # Update info label
-        text = f'<b>{index} / {len(infos) - 1} (Lot: {info.lot})</b><br><br>' + \
-            f'{info.json_file}<br>' + \
-            f'TimeStamp: {info.timestamp}<br><br>' + \
-            f'日本時間: {format_jst(parse_timestamp(info.timestamp))}'
+        self.info_label.setText(f'<b>{index+1} / {len(infos)} (Lot: {info.lot})</b>')
+        self.json_label.setText(f'{info.json_file}')
+        self.timestamp_label.setText(f'TimeStamp: {info.timestamp}')
+
+        text = f'日本時間: {format_jst(parse_timestamp(info.timestamp))}'
         if index > 0:
             hours, minutes, seconds = diff_timestamp(infos[index - 1].timestamp, info.timestamp)
             if hours > 0:
@@ -148,7 +197,7 @@ class ParkWidget(QWidget):
             else:
                 text += f'（+ {seconds:.0f}秒）'
 
-        self.info_label.setText(text)
+        self.jst_label.setText(text)
         
         # Update json label
         color = "red" if index > 0 and info.is_occupied != infos[index - 1].is_occupied else "white"
@@ -166,7 +215,9 @@ class ParkWidget(QWidget):
         color = "red" if index > 0 and info.lpr_bottom != infos[index - 1].lpr_bottom else "white"
         text += f'<font color="{color}">lpr_bottom: {info.lpr_bottom}</font><br>'
 
-        self.json_label.setText(text)
+        text += f'<font color="white">Score: {self.info.plate_score}<br>Confidence: {self.info.plate_confidence}</font>'
+
+        self.param_label.setText(text)
 
         # Update status
         self.gt_unknown.setChecked(info.is_gt_unknown)
