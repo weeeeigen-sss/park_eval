@@ -57,6 +57,8 @@ def save_label(path: str, infos: list[ParkingInfo]):
                 'json',
                 'lot',
                 'is_occupied',
+                'is_uncertain',
+                'vehicle_status',
 
                 'vehicle_xmin',
                 'vehicle_ymin',
@@ -93,6 +95,8 @@ def save_label(path: str, infos: list[ParkingInfo]):
                     f'{info.json_file}',
                     f'{info.lot}', 
                     f'{int(info.is_occupied)}', 
+                    f'{info.is_uncertain}',
+                    f'{info.vehicle_status}',
 
                     f'{info.vehicle_xmin}',
                     f'{info.vehicle_ymin}',
