@@ -1,6 +1,6 @@
 import os
 
-from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog, QLabel
+from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog, QLabel, QTabWidget, QTableWidget, QTableWidgetItem
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication
 
@@ -8,7 +8,7 @@ from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication
 from app.types import Status, text_for
 from app.models.parking_info import ParkingInfo
 from app.views.park_widget import ParkWidget
-from app.controllers.data_manager import load, save_label, save_eval
+from app.controllers.data_manager import load, eval, save_label, save_eval
 
 class MainWidget(QMainWindow):
     def __init__(self, frames):
@@ -20,13 +20,23 @@ class MainWidget(QMainWindow):
 
         self.park_widgets: list[ParkWidget] = []
 
-        central = QWidget()
-        layout = QHBoxLayout(central)
+        self.tabs = QTabWidget()
+        
+        # Label tab
+        label_view = QWidget()
+        layout = QHBoxLayout(label_view)
         for i in range(0, self.frames):
             park_widget = ParkWidget()
             layout.addWidget(park_widget)
             self.park_widgets.append(park_widget)
+        self.tabs.addTab(label_view, 'labeling')
 
+        # Eval tab
+        self.eval_view = QTableWidget(17, 2)
+        self.tabs.addTab(self.eval_view, 'eval')
+        self.tabs.currentChanged.connect(self.on_tabbar_clicked)
+
+        # Toolbar
         toolbar = QToolBar("My Toolbar")
         toolbar.setMovable(False)   # 動かしたくない場合
         self.addToolBar(toolbar)
@@ -57,16 +67,22 @@ class MainWidget(QMainWindow):
         toolbar.addWidget(self.filter_index_label)
 
         # self.setLayout(layout)
-        self.setCentralWidget(central)
+        self.setCentralWidget(self.tabs)
         self.setWindowTitle("park_eval")
 
         # Shortcuts
         self.configure_shortcuts()
 
-    def load(self):
-        path = QFileDialog.getExistingDirectory(None, "フォルダを選択")
+    def load(self, path:str = None):
+        if not path:
+            path = QFileDialog.getExistingDirectory(None, "フォルダを選択")
+        
         if not path:
             print("No data selected.")
+            return
+        
+        if not os.path.exists(path):
+            print("Not exitst")
             return
 
         infos, lots = load(path)
@@ -129,9 +145,6 @@ class MainWidget(QMainWindow):
         self.update_views()
 
 
-        
-
-
     def keyPressEvent(self, event):
         if len(self.infos) > 0:
             if event.key() == Qt.Key.Key_Left:
@@ -188,12 +201,43 @@ class MainWidget(QMainWindow):
         if not self.path:
             return
         
-        path = save_eval(self.path, self.lots, self.infos)
+        path, eval_results = save_eval(self.path, self.lots, self.infos)
         self.statusBar().showMessage(f'Saved eval: {path}')
+
+        self.update_eval_table(eval_results)
+
+    def update_eval_table(self, eval_results=None):
+        if eval_results == None:
+            eval_results = eval(self.lots, self.infos)
+
+        for i, (k,v) in enumerate(eval_results.items()):
+            self.eval_view.setItem(i, 0, QTableWidgetItem(k))
+            item = QTableWidgetItem(str(v))
+            item.setTextAlignment(Qt.AlignmentFlag.AlignRight)
+            self.eval_view.setItem(i, 1, item)
+        self.eval_view.resizeColumnsToContents()
+
+    def on_tabbar_clicked(self, index):
+        if index == 1:
+            self.update_eval_table()
 
     def configure_shortcuts(self):
         shortcut = QShortcut(QKeySequence("Ctrl+C"), self)
         shortcut.activated.connect(self.copy_screenshot)
+
+        shortcut_left = QShortcut(QKeySequence("Ctrl+Shift+["), self)
+        shortcut_left.activated.connect(self.prev_tab)
+
+        shortcut_right = QShortcut(QKeySequence("Ctrl+Shift+]"), self)
+        shortcut_right.activated.connect(self.next_tab)
+
+    def prev_tab(self):
+        i = self.tabs.currentIndex()
+        self.tabs.setCurrentIndex((i - 1) % self.tabs.count())
+
+    def next_tab(self):
+        i = self.tabs.currentIndex()
+        self.tabs.setCurrentIndex((i + 1) % self.tabs.count())
 
     def copy_screenshot(self):
         # ウィンドウ全体をキャプチャ

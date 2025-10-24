@@ -129,7 +129,7 @@ def save_label(path: str, infos: list[ParkingInfo]):
                     ])
     return path
 
-def save_eval(path: str, lots, infos: list[ParkingInfo]):        
+def eval(lots, infos: list[ParkingInfo]):
     detect_all = detect_ok = 0
     ng_out = ng_shadow = ng_occlusion = ng_fp = ng_blur = ng_others = 0
     wrong_out = 0
@@ -180,28 +180,32 @@ def save_eval(path: str, lots, infos: list[ParkingInfo]):
             if info.status == Status.NoLabel:
                 print('No label data exists.')
 
+    return {
+        '検知総数': detect_all,
+        '車両総数': detect_all - wrong_out - ng_fp - resend + is_miss_out,
+        '入庫見逃し': is_miss_in,
+        '出庫見逃し': is_miss_out,
+        '誤出庫': wrong_out,
+        '全桁OK': detect_ok,
+        '全桁NG': ng_out + ng_shadow + ng_occlusion + ng_fp + ng_blur + ng_others,
+        '全桁NG（見切れ）': ng_out,
+        '全桁NG（影）': ng_shadow,
+        '全桁NG（Occlusion）': ng_occlusion,
+        '全桁NG（FP）': ng_fp,
+        '全桁NG（Blur）': ng_blur,
+        '全桁NG（その他）': ng_others,
+        'GT不明': is_gt_unknown,
+        '再送回数': resend,
+        '全桁精度（メタごと）': detect_ok / detect_all,
+        '全桁精度（見切れ/FP抜き）': detect_ok / (detect_all - ng_fp - ng_out)}
+
+def save_eval(path: str, lots, infos: list[ParkingInfo]):        
+    eval_results = eval(lots, infos)
 
     path = os.path.join(path, 'eval.csv')
     with open(path, 'w', newline='', encoding='utf-8-sig') as f:
-            writer = csv.writer(f)
-            writer.writerows([
-                ['検知総数', detect_all],
-                ['車両総数', detect_all - wrong_out - ng_fp - resend + is_miss_out],
-                ['入庫見逃し', is_miss_in],
-                ['出庫見逃し', is_miss_out],
-                ['誤出庫', wrong_out],
-                ['全桁OK', detect_ok],
-                ['全桁NG', ng_out + ng_shadow + ng_occlusion + ng_fp + ng_blur + ng_others],
-                ['全桁NG（見切れ）', ng_out],
-                ['全桁NG（影）', ng_shadow],
-                ['全桁NG（Occlusion）', ng_occlusion],
-                ['全桁NG（FP）', ng_fp],
-                ['全桁NG（Blur）', ng_blur],
-                ['全桁NG（その他）', ng_others],
-                ['GT不明', is_gt_unknown],
-                ['再送回数', resend],
-                ['全桁精度（メタごと）', detect_ok / detect_all],
-                ['全桁精度（見切れ/FP抜き）', detect_ok / (detect_all - ng_fp - ng_out)]
-            ])
+        writer = csv.writer(f)
+        for k,v in eval_results.items():
+            writer.writerow([k, v])
 
-    return path
+    return path, eval_results

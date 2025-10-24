@@ -10,5 +10,7 @@ if __name__ == "__main__":
     # app.setStyleSheet("QWidget { font-size: 24pt; }")
 
     window = MainWidget(3)
+    if len(sys.argv) == 2:
+        window.load(sys.argv[1])
     window.show()
     sys.exit(app.exec())

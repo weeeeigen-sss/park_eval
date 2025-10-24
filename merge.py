@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 # ルートフォルダを指定
-root = Path("/Users/Yusaku.Eigen/Desktop/20250916_車室監視_道玄坂２車室_0915_0921")
+root = Path("/Users/Yusaku.Eigen/Desktop/20251021_車室監視_道玄坂２車室_1020_1026")
 
 for target_name in ["IT", "META", "RAW"]:
     # target_name = "eval"  # まとめたいフォルダ名
