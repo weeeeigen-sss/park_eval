@@ -138,8 +138,10 @@ def eval(lots, infos: list[ParkingInfo]):
     resend = 0
     is_occupied_last = False
 
+    infos_wo_moving = [info for info in infos if info.vehicle_status != 'Moving']
+
     for lot in lots:
-        for info in infos:
+        for info in infos_wo_moving:
             if info.lot != lot:
                 continue
 
@@ -177,8 +179,8 @@ def eval(lots, infos: list[ParkingInfo]):
             
             is_occupied_last = info.is_occupied
 
-            if info.status == Status.NoLabel:
-                print('No label data exists.')
+            # if info.status == Status.NoLabel:
+            #     print('No label data exists.')
 
     return {
         '検知総数': detect_all,

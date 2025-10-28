@@ -1,6 +1,7 @@
 import os
 
-from PyQt6.QtWidgets import QWidget, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog, QLabel, QTabWidget, QTableWidget, QTableWidgetItem
+from PyQt6.QtWidgets import (
+    QWidget, QPushButton, QHBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog, QLabel, QTabWidget, QTableWidget, QTableWidgetItem, QCheckBox)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication
 
@@ -50,13 +51,10 @@ class MainWidget(QMainWindow):
         self.lot_combo.currentIndexChanged.connect(self.update_index)
         toolbar.addWidget(self.lot_combo)
 
-        self.save_button = QPushButton('Save')
-        self.save_button.clicked.connect(self.save_label)
-        toolbar.addWidget(self.save_button)
-
-        self.eval_button = QPushButton('Eval')
-        self.eval_button.clicked.connect(self.save_eval)
-        toolbar.addWidget(self.eval_button)
+        self.show_moving = QCheckBox('Show Moving')
+        self.show_moving.setChecked(True)
+        self.show_moving.stateChanged.connect(self.update_index)
+        toolbar.addWidget(self.show_moving)
 
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し'] + [text_for(status) for status in Status])
@@ -65,6 +63,14 @@ class MainWidget(QMainWindow):
 
         self.filter_index_label = QLabel()
         toolbar.addWidget(self.filter_index_label)
+
+        self.save_button = QPushButton('Save')
+        self.save_button.clicked.connect(self.save_label)
+        toolbar.addWidget(self.save_button)
+
+        self.eval_button = QPushButton('Eval')
+        self.eval_button.clicked.connect(self.save_eval)
+        toolbar.addWidget(self.eval_button)
 
         # self.setLayout(layout)
         self.setCentralWidget(self.tabs)
@@ -115,12 +121,15 @@ class MainWidget(QMainWindow):
 
     def update_index(self):
         lot_index = self.lot_combo.currentIndex()
+        show_moving = self.show_moving.isChecked()
         filter_index = self.filter_combo.currentIndex()
 
+        filter_infos = self.infos if show_moving else [info for info in self.infos if info.vehicle_status != 'Moving']
+
         if lot_index == 0:
-            self.filter_infos = self.infos
+            self.filter_infos = filter_infos
         else:
-            self.filter_infos = [info for info in self.infos if info.lot == self.lots[lot_index - 1]]
+            self.filter_infos = [info for info in filter_infos if info.lot == self.lots[lot_index - 1]]
 
         if filter_index == 0:
             self.filter_indices = None

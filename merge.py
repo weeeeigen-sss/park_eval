@@ -1,8 +1,13 @@
+import sys
 import shutil
 from pathlib import Path
 
+if len(sys.argv) != 2:
+    print("Usage: python merge.py <not used>")
+    sys.exit(1)
+
 # ルートフォルダを指定
-root = Path("/Users/Yusaku.Eigen/Desktop/20251021_車室監視_道玄坂２車室_1020_1026")
+root = Path(sys.argv[1])
 
 for target_name in ["IT", "META", "RAW"]:
     # target_name = "eval"  # まとめたいフォルダ名
