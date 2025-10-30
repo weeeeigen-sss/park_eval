@@ -1,8 +1,8 @@
 import os
 import subprocess
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QCheckBox, QPushButton
-from PyQt6.QtGui import QPixmap, QGuiApplication, QIcon
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QCheckBox, QPushButton, QApplication
+from PyQt6.QtGui import QPixmap, QGuiApplication, QIcon, QPalette
 from PyQt6.QtCore import Qt
 
 
@@ -200,22 +200,25 @@ class ParkWidget(QWidget):
         self.jst_label.setText(text)
         
         # Update json label
-        color = "red" if index > 0 and info.is_occupied != infos[index - 1].is_occupied else "white"
+        palette = QApplication.palette()
+        normal_color = palette.color(QPalette.ColorRole.WindowText).name()
+
+        color = "red" if index > 0 and info.is_occupied != infos[index - 1].is_occupied else normal_color
         text = f'<font color="{color}">Is_Occupied: {info.is_occupied}</font><br>'
 
-        color = "red" if index > 0 and info.is_occlusion != infos[index - 1].is_occlusion else "white"
+        color = "red" if index > 0 and info.is_occlusion != infos[index - 1].is_occlusion else normal_color
         text += f'<font color="{color}">Is_Occlusion: {info.is_occlusion}</font><br>'
 
-        color = "red" if index > 0 and info.vehicle_status != infos[index - 1].vehicle_status else "white"
+        color = "red" if index > 0 and info.vehicle_status != infos[index - 1].vehicle_status else normal_color
         text += f'<font color="{color}">Vehicle_Status: {info.vehicle_status}</font><br>'
 
-        color = "red" if index > 0 and info.lpr_top != infos[index - 1].lpr_top else "white"
+        color = "red" if index > 0 and info.lpr_top != infos[index - 1].lpr_top else normal_color
         text += f'<font color="{color}">lpr_top: {info.lpr_top}</font><br>'
 
-        color = "red" if index > 0 and info.lpr_bottom != infos[index - 1].lpr_bottom else "white"
+        color = "red" if index > 0 and info.lpr_bottom != infos[index - 1].lpr_bottom else normal_color
         text += f'<font color="{color}">lpr_bottom: {info.lpr_bottom}</font><br>'
 
-        text += f'<font color="white">Score: {self.info.plate_score}<br>Confidence: {self.info.plate_confidence}</font>'
+        text += f'<font color="{normal_color}">Score: {self.info.plate_score}<br>Confidence: {self.info.plate_confidence}</font>'
 
         self.param_label.setText(text)
 
