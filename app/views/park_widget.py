@@ -1,5 +1,6 @@
 import os, sys
 import subprocess
+from pathlib import Path
 
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QCheckBox, QPushButton, QApplication
 from PyQt6.QtGui import QPixmap, QGuiApplication, QIcon, QPalette
@@ -148,10 +149,10 @@ class ParkWidget(QWidget):
             if os.path.exists(self.info.json_path):
                 if sys.platform == "win32":
                     # Explorerで選択状態で開く（Windows専用）
-                    subprocess.run(["explorer", "/select,", str(self.info.json_path)])
+                    subprocess.run(["explorer", "/select,", str(Path(self.info.json_path))])
                 elif sys.platform == "darwin":
                     # Finderで選択状態で開く（macOS専用）
-                    subprocess.run(["open", "-R", str(self.info.json_path)])
+                    subprocess.run(["open", "-R", str(Path(self.info.json_path))])
 
     def on_time_clicked(self):
         if self.info is not None:
