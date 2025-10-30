@@ -30,6 +30,10 @@ class ClickableImageLabel(QLabel):
         if self.image_path is None:
             return
         if event.button() == Qt.MouseButton.LeftButton and self.image_path.exists():
-            # Finderで選択状態で開く（macOS専用）
-            subprocess.run(["open", "-R", str(self.image_path)])
+            if sys.platform == "win32":
+                # Explorerで選択状態で開く（Windows専用）
+                subprocess.run(["explorer", "/select,", str(self.image_path)])
+            elif sys.platform == "darwin":  
+                # Finderで選択状態で開く（macOS専用）
+                subprocess.run(["open", "-R", str(self.image_path)])
         super().mousePressEvent(event)
