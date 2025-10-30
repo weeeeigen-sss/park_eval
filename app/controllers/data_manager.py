@@ -55,6 +55,7 @@ def save_label(path: str, infos: list[ParkingInfo]):
         writer.writerow(
             [
                 'json',
+                'Timestamp',
                 'lot',
                 'is_occupied',
                 'is_uncertain',
@@ -93,6 +94,7 @@ def save_label(path: str, infos: list[ParkingInfo]):
             writer.writerow(
                 [
                     f'{info.json_file}',
+                    f'{info.timestamp}',
                     f'{info.lot}', 
                     f'{int(info.is_occupied)}', 
                     f'{info.is_uncertain}',
