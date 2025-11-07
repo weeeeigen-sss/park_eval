@@ -23,14 +23,14 @@ for info in ng_shadows:
 
 
     # --- 2. ROI領域を指定（x, y, w, h）---
-    x, y, w, h = info.plate_xmin, info.plate_ymin, info.plate_width, info.plate_height
-    roi = img[y:y+h, x:x+w].copy()
+    x, y, x1, y1 = info.plate_xmin, info.plate_ymin, info.plate_xmax, info.plate_ymax
+    roi = img[y:y1, x:x1].copy()
 
     output_dir = os.path.join('clahe_results', info.name())
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    txts.append(f'./test_sample_lpr 20250403050600551.bin mount_point/{info.name()} mount_point/{info.name()} {x} {y} {w} {h}')
+    txts.append(f'./test_sample_lpr 20250403050600551.bin mount_point/{info.name()} mount_point/{info.name()} {int(x * 640 / 2016)} {int(y * 480 / 1520)} {int(x1 * 640 / 2016)} {int(y1 * 480 / 1520)}')
 
     for name, clahe in clahes.items():
         # --- YUVに変換 ---
@@ -46,10 +46,10 @@ for info in ng_shadows:
 
         # --- 元画像に反映 ---
         img_copy = img.copy()
-        img_copy[y:y+h, x:x+w] = roi_eq
+        img_copy[y:y1, x:x1] = roi_eq
 
         # --- 保存 ---
-        output_path = os.path.join(output_dir, f'{name}.jpg')
+        output_path = os.path.join(output_dir, f'{name}.bmp')
         cv2.imwrite(output_path, cv2.cvtColor(img_copy, cv2.COLOR_RGB2BGR))
         # print(f"Saved: {output_path}")
 
