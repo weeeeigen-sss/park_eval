@@ -16,23 +16,23 @@ clahes = {
 }
 ng_shadows = [info for info in infos if info.status == Status.NG_Shadow]
 
+txts = []
 for info in ng_shadows:
     img = cv2.imread(os.path.join(raw_dir, info.name() + '_raw.jpg'))
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
 
     # --- 2. ROI領域を指定（x, y, w, h）---
     x, y, w, h = info.plate_xmin, info.plate_ymin, info.plate_width, info.plate_height
     roi = img[y:y+h, x:x+w].copy()
 
-    output_path = f"clahe_results/output.jpg"
-    cv2.imwrite(output_path, cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-    print(f"Saved: {output_path}")
+    output_dir = os.path.join('clahe_results', info.name())
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    txts.append(f'./test_sample_lpr 20250403050600551.bin mount_point/{info.name()} mount_point/{info.name()} {x} {y} {w} {h}')
 
     for name, clahe in clahes.items():
-        output_dir = os.path.join('clahe_results', name)
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-
         # --- YUVに変換 ---
         yuv = cv2.cvtColor(roi, cv2.COLOR_RGB2YUV)
         y_channel, u_channel, v_channel = cv2.split(yuv)
@@ -49,6 +49,12 @@ for info in ng_shadows:
         img_copy[y:y+h, x:x+w] = roi_eq
 
         # --- 保存 ---
-        output_path = os.path.join(output_dir, info.name() + '.jpg')
+        output_path = os.path.join(output_dir, f'{name}.jpg')
         cv2.imwrite(output_path, cv2.cvtColor(img_copy, cv2.COLOR_RGB2BGR))
-        print(f"Saved: {output_path}")
+        # print(f"Saved: {output_path}")
+
+
+with open('clahe_results/lpr.sh', 'w') as f:
+    f.write('#!/bin/bash\n\n')
+    for line in txts:
+        f.write(line + '\n')
