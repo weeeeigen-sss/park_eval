@@ -9,6 +9,8 @@ class ParkingInfo:
         lot = split[1]
         self.is_ps = len(split) == 3
 
+        self.path = ''
+
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
             
@@ -60,6 +62,11 @@ class ParkingInfo:
     def name(self):
         name = self.timestamp + '_' + self.lot
         return name + '_ps' if self.is_ps else name
+    
+    def image_base(self):
+        name = self.timestamp + '_' + self.lot
+        it = os.path.join(self.path, 'IT')
+        return it + '/' + name + '_ps' if self.is_ps else it + '/' + name
     
     def set(self, status: Status):
         self.status = status

@@ -17,6 +17,7 @@ def load(path: str):
     lots = []
     for json_file in json_files:
         info = ParkingInfo(os.path.join(meta_dir, json_file))
+        info.path = path
         infos.append(info)
         if not info.lot in lots:
             lots.append(info.lot)
