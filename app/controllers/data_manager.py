@@ -136,7 +136,7 @@ def save_label(path: str, infos: list[ParkingInfo]):
 
 def eval(lots, infos: list[ParkingInfo]):
     detect_all = detect_ok = 0
-    ng_out = ng_shadow = ng_occlusion = ng_fp = ng_blur = ng_others = 0
+    ng_out = ng_shadow = ng_occlusion = ng_fp = ng_blur = ng_overexposure = ng_ai = ng_others = 0
     wrong_out = 0
     is_miss_in = is_miss_out = is_gt_unknown = 0
 
@@ -179,6 +179,10 @@ def eval(lots, infos: list[ParkingInfo]):
                     ng_fp += 1  
                 elif info.status == Status.NG_Blur:
                     ng_blur += 1
+                elif info.status == Status.NG_OverExposure:
+                    ng_overexposure += 1
+                elif info.status == Status.NG_AI:
+                    ng_ai += 1
                 elif info.status == Status.NG_Others:
                     ng_others += 1
             
@@ -200,6 +204,8 @@ def eval(lots, infos: list[ParkingInfo]):
         '全桁NG（Occlusion）': ng_occlusion,
         '全桁NG（FP）': ng_fp,
         '全桁NG（Blur）': ng_blur,
+        '全桁NG（白飛び）': ng_overexposure,
+        '全桁NG（AIモデル）': ng_ai,
         '全桁NG（その他）': ng_others,
         'GT不明': is_gt_unknown,
         '再送回数': resend,
@@ -208,12 +214,11 @@ def eval(lots, infos: list[ParkingInfo]):
 
 def save_eval(path: str, lots, infos: list[ParkingInfo]):        
     eval_results = eval(lots, infos)
-    eval_results_first = eval(lots, [info for info in infos if info.is_first_park])
 
     path = os.path.join(path, 'eval.csv')
     with open(path, 'w', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f)
         for k,v in eval_results.items():
-            writer.writerow([k, v, eval_results_first[k]])
+            writer.writerow([k, v])
 
     return path, eval_results
