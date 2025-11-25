@@ -57,7 +57,7 @@ class MainWidget(QMainWindow):
         toolbar.addWidget(self.show_moving)
 
         self.filter_combo = QComboBox()
-        self.filter_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し'] + [text_for(status) for status in Status])
+        self.filter_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し', 'PlateConf NG', 'Format NG'] + [text_for(status) for status in Status])
         self.filter_combo.currentIndexChanged.connect(self.update_index)
         toolbar.addWidget(self.filter_combo)
 
@@ -126,11 +126,13 @@ class MainWidget(QMainWindow):
 
         filter_infos = self.infos if show_moving else [info for info in self.infos if info.vehicle_status != 'Moving']
 
+        # Filter by lot
         if lot_index == 0:
             self.filter_infos = filter_infos
         else:
             self.filter_infos = [info for info in filter_infos if info.lot == self.lots[lot_index - 1]]
 
+        # Filter by status
         if filter_index == 0:
             self.filter_indices = None
             self.info_index = self.frames - 1
@@ -141,8 +143,12 @@ class MainWidget(QMainWindow):
                 self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.is_miss_in == True]
             elif filter_index == 3:
                 self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.is_miss_out == True]
+            elif filter_index == 4:
+                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.vehicle_status == 'Moving' and not info.check_confidence()]
+            elif filter_index == 5:
+                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.vehicle_status == 'Stop' and not info.check_format()]
             else:
-                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.status == Status(filter_index - 4)]
+                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.status == Status(filter_index - 6)]
 
             if len(self.filter_indices) == 0:
                 self.filter_combo.setCurrentIndex(0)

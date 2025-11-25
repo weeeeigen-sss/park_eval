@@ -11,6 +11,9 @@ class Status(Enum):
     NG_Others = 7
     OK_Out = 8
     Wrong_Out = 9
+    NG_OverExposure = 10
+    NG_AI = 11
+
 
 def text_for(status: Status):
     if status == Status.NoLabel:
@@ -33,3 +36,7 @@ def text_for(status: Status):
         return 'OK（出庫）'
     elif status == Status.Wrong_Out:
         return '誤出庫'
+    elif status == Status.NG_OverExposure:
+        return 'NG（白飛び）'
+    elif status == Status.NG_AI:
+        return 'NG（AIモデル）'
