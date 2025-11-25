@@ -57,6 +57,7 @@ class ParkingInfo:
                 self.is_miss_in = False
                 self.is_miss_out = False
                 self.is_gt_unknown = False
+                self.is_first_park = False
 
     def name(self):
         name = self.timestamp + '_' + self.lot
@@ -74,18 +75,26 @@ class ParkingInfo:
     def set_gt_unknown(self, gt_unknown):
         self.is_gt_unknown = gt_unknown
 
-    def check_confidence(self, threshold=0.3):
-        if self.plate_confidence is None:
-            return False
-        return self.plate_confidence >= threshold
+    def set_first_park(self, first_park):
+        self.is_first_park = first_park
+
+    def is_conf_ng(self, threshold=0.3):
+        if self.plate_confidence is not None and self.vehicle_status == 'Moving' and self.plate_confidence < threshold:
+            return True
+        return False
     
-    def check_format(self):
-        if self.lpr_top is None or self.lpr_bottom is None:
-            return False
-        top_format = '^((\p{Han}{1,4}|\p{Hiragana}{3}|(\p{Han}|\p{Katakana}){3})([1-8][0-9A-Z]{2}|[0-9]{2}))$'
-        bottom_format = '^(\p{Hiragana}|[YABEHKMT])([1-9]{1}\d{1}-\d{2}|・[1-9]{1}\d{2}|・{2}[1-9]{1}\d{1}|・{3}[1-9]{1})$'
-        
-        top_match = regex.match(top_format, self.lpr_top)
-        bottom_match = regex.match(bottom_format, self.lpr_bottom)
-        
-        return top_match is not None and bottom_match is not None
+    def is_format_ng(self):
+        if self.vehicle_status == 'Stop':
+            if self.lpr_top is not None:
+                top_format = '^((\p{Han}{1,4}|\p{Hiragana}{3}|(\p{Han}|\p{Katakana}){3})([1-8][0-9A-Z]{2}|[0-9]{2}))$'
+                top_match = regex.match(top_format, self.lpr_top)
+                if top_match is None:
+                    return True
+                
+            if self.lpr_bottom is not None:
+                bottom_format = '^(\p{Hiragana}|[YABEHKMT])([1-9]{1}\d{1}-\d{2}|・[1-9]{1}\d{2}|・{2}[1-9]{1}\d{1}|・{3}[1-9]{1})$'
+                bottom_match = regex.match(bottom_format, self.lpr_bottom)
+                if bottom_match is None:
+                    return True
+                
+        return False

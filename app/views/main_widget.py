@@ -144,9 +144,9 @@ class MainWidget(QMainWindow):
             elif filter_index == 3:
                 self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.is_miss_out == True]
             elif filter_index == 4:
-                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.vehicle_status == 'Moving' and not info.check_confidence()]
+                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.is_conf_ng()]
             elif filter_index == 5:
-                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.vehicle_status == 'Stop' and not info.check_format()]
+                self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.is_format_ng()]
             else:
                 self.filter_indices = [i for i, info in enumerate(self.filter_infos) if info.status == Status(filter_index - 6)]
 

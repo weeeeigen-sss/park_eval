@@ -112,6 +112,10 @@ class ParkWidget(QWidget):
         # Option checkboxs
         option_layout = QHBoxLayout()
 
+        self.first_park = QCheckBox('初回入庫')
+        self.first_park.stateChanged.connect(self.on_first_park_changed)
+        option_layout.addWidget(self.first_park)
+
         self.gt_unknown = QCheckBox('GT不明')
         self.gt_unknown.stateChanged.connect(self.on_gt_unknown_changed)
         option_layout.addWidget(self.gt_unknown)
@@ -131,6 +135,10 @@ class ParkWidget(QWidget):
     def on_combo_changed(self, index):
         if self.info is not None:
             self.info.set(Status(index))
+
+    def on_first_park_changed(self, check):
+        if self.info is not None:
+            self.info.set_first_park(check == Qt.CheckState.Checked.value)
 
     def on_gt_unknown_changed(self, check):
         if self.info is not None:
@@ -223,17 +231,21 @@ class ParkWidget(QWidget):
         color = "red" if index > 0 and info.lpr_bottom != infos[index - 1].lpr_bottom else normal_color
         text += f'<font color="{color}">lpr_bottom: {info.lpr_bottom}</font><br>'
 
-        color = "yellow" if info.vehicle_status == 'Stop' and not info.check_format() else normal_color
+        color = "yellow" if info.is_format_ng() else normal_color
         text += f'<font color="{color}">Format: {"OK" if color != "yellow" else "NG"}</font><br>'
 
         text += f'<font color="{normal_color}">Score: {self.info.plate_score}<br>'
 
-        color = "yellow" if info.vehicle_status == 'Moving' and not info.check_confidence() else normal_color
+        color = "yellow" if info.is_conf_ng() else normal_color
         text += f'<font color="{color}">Plate Confidence: {info.plate_confidence}</font><br>'
 
         self.param_label.setText(text)
 
         # Update status
+        self.combo.setEnabled(info.vehicle_status != 'Moving')
+        self.first_park.setEnabled(info.vehicle_status == 'Stop')
+
+        self.first_park.setChecked(info.is_first_park)
         self.gt_unknown.setChecked(info.is_gt_unknown)
         self.miss_in.setChecked(info.is_miss_in)
         self.miss_out.setChecked(info.is_miss_out)

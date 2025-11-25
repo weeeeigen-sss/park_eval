@@ -39,6 +39,9 @@ def load(path: str):
                     if 'is_gt_unknown' in row:
                         match[0].is_gt_unknown = bool(int(row['is_gt_unknown']))
 
+                    if 'is_first_park' in row:
+                        match[0].is_first_park = bool(int(row['is_first_park']))
+
                     if 'status' in row:
                         match[0].status = Status(int(row['status']))
                 else:
@@ -87,6 +90,7 @@ def save_label(path: str, infos: list[ParkingInfo]):
                 'is_miss_in',
                 'is_miss_out',
                 'is_gt_unknown',
+                'is_first_park',
                 'status',
                 'status_label'
                 ])
@@ -126,6 +130,7 @@ def save_label(path: str, infos: list[ParkingInfo]):
                     f'{int(info.is_miss_in)}',
                     f'{int(info.is_miss_out)}',
                     f'{int(info.is_gt_unknown)}',
+                    f'{int(info.is_first_park)}',
                     f'{info.status.value}',
                     f'{info.status}'
                     ])
@@ -205,11 +210,12 @@ def eval(lots, infos: list[ParkingInfo]):
 
 def save_eval(path: str, lots, infos: list[ParkingInfo]):        
     eval_results = eval(lots, infos)
+    eval_results_first = eval(lots, [info for info in infos if info.is_first_park])
 
     path = os.path.join(path, 'eval.csv')
     with open(path, 'w', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f)
         for k,v in eval_results.items():
-            writer.writerow([k, v])
+            writer.writerow([k, v, eval_results_first[k]])
 
     return path, eval_results
