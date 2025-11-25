@@ -53,6 +53,10 @@ class ParkingInfo:
                 self.vehicle_height = vehicle_bbox.get("height")
                 self.vehicle_score = vehicle_bbox.get("score")
 
+                duration = info.get("Duration", {})
+                self.plate_count = duration.get("plate_count")
+                self.vehicle_count = duration.get("vehicle_count")
+
                 self.status = Status.NoLabel
                 self.is_miss_in = False
                 self.is_miss_out = False

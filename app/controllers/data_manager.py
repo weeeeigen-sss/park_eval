@@ -87,6 +87,9 @@ def save_label(path: str, infos: list[ParkingInfo]):
 
                 'plate_confidence',
 
+                'plate_count',
+                'vehicle_count',
+
                 'is_miss_in',
                 'is_miss_out',
                 'is_gt_unknown',
@@ -104,28 +107,23 @@ def save_label(path: str, infos: list[ParkingInfo]):
                     f'{info.is_uncertain}',
                     f'{info.vehicle_status}',
 
-                    f'{info.vehicle_xmin}',
-                    f'{info.vehicle_ymin}',
-                    f'{info.vehicle_xmax}',
-                    f'{info.vehicle_ymax}',
-                    f'{info.vehicle_wdith}',
-                    f'{info.vehicle_height}',
+                    f'{info.vehicle_xmin}', f'{info.vehicle_ymin}',
+                    f'{info.vehicle_xmax}', f'{info.vehicle_ymax}',
+                    f'{info.vehicle_wdith}', f'{info.vehicle_height}',
                     f'{info.vehicle_score}',
 
-                    f'{info.lpr_top}',
-                    f'{info.top_quality}',
-                    f'{info.lpr_bottom}',
-                    f'{info.bottom_quality}',
+                    f'{info.lpr_top}', f'{info.top_quality}',
+                    f'{info.lpr_bottom}', f'{info.bottom_quality}',
 
-                    f'{info.plate_xmin}',
-                    f'{info.plate_ymin}',
-                    f'{info.plate_xmax}',
-                    f'{info.plate_ymax}',
-                    f'{info.plate_width}',
-                    f'{info.plate_height}',
+                    f'{info.plate_xmin}', f'{info.plate_ymin}',
+                    f'{info.plate_xmax}', f'{info.plate_ymax}',
+                    f'{info.plate_width}', f'{info.plate_height}',
                     f'{info.plate_score}',
 
                     f'{info.plate_confidence}',
+
+                    f'{info.plate_count}',
+                    f'{info.vehicle_count}',
 
                     f'{int(info.is_miss_in)}',
                     f'{int(info.is_miss_out)}',
