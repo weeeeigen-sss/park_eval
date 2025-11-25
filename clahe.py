@@ -29,8 +29,8 @@ if len(sys.argv) == 2:
         print(dir)
         raw_dir = os.path.join(sys.argv[1], dir, 'RAW')
         infos, lots = load(os.path.join(sys.argv[1], dir))
-        filter = [info for info in infos if info.status == Status.NG_Shadow]
-        # filter = [info for info in infos if info.vehicle_status == 'Stop']
+        # filter = [info for info in infos if info.status == Status.NG_Shadow]
+        filter = [info for info in infos if info.vehicle_status == 'Stop']
 
         print(len(infos), len(filter))
 

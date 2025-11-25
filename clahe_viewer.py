@@ -245,20 +245,20 @@ class MainWidget(QMainWindow):
             writer.writerow(['image_name', 'ok', 'ng_shadow', 'ng_others', 'ok_to_ng', 'ng_shadow_to_ok', 'ng_others_to_ok'])
             
             # Write original counts
-            original_ok = [clahe for clahe in self.clahes if clahe.info.status == Status.OK]
-            original_ng_shadow = [clahe for clahe in self.clahes if clahe.info.status == Status.NG_Shadow]
-            original_ng_others = [clahe for clahe in self.clahes if clahe.info.status != Status.OK and clahe.info.status != Status.NG_Shadow]
-            writer.writerow(['original', len(original_ok), len(original_ng_shadow), len(original_ng_others), '', '', ''])
+            base_ok = [clahe for clahe in self.clahes if clahe.info.status == Status.OK]
+            base_ng_shadow = [clahe for clahe in self.clahes if clahe.info.status == Status.NG_Shadow]
+            base_ng_others = [clahe for clahe in self.clahes if clahe.info.status != Status.OK and clahe.info.status != Status.NG_Shadow]
+            writer.writerow(['base', len(base_ok), len(base_ng_shadow), len(base_ng_others), '', '', ''])
             
             # Write clahe counts
-            for image_name in ['1x1', '4x2', '8x4']:
+            for image_name in ['original', '1x1', '4x2', '8x4']:
                 ok = [clahe for clahe in self.clahes if clahe.labels.get(image_name) == Status.OK]
                 ng_shadow = [clahe for clahe in self.clahes if clahe.labels.get(image_name) == Status.NG_Shadow]
                 ng_others = [clahe for clahe in self.clahes if clahe.labels.get(image_name) != Status.OK and clahe.labels.get(image_name) != Status.NG_Shadow]
             
-                ok_to_ng = [clahe for clahe in original_ok if clahe.labels.get(image_name) != Status.OK]
-                ng_shadow_to_ok = [clahe for clahe in original_ng_shadow if clahe.labels.get(image_name) == Status.OK]
-                ng_others_to_ok = [clahe for clahe in original_ng_others if clahe.labels.get(image_name) == Status.OK]
+                ok_to_ng = [clahe for clahe in base_ok if clahe.labels.get(image_name) != Status.OK]
+                ng_shadow_to_ok = [clahe for clahe in base_ng_shadow if clahe.labels.get(image_name) == Status.OK]
+                ng_others_to_ok = [clahe for clahe in base_ng_others if clahe.labels.get(image_name) == Status.OK]
 
                 writer.writerow([image_name, len(ok), len(ng_shadow), len(ng_others), len(ok_to_ng), len(ng_shadow_to_ok), len(ng_others_to_ok)])
         self.statusBar().showMessage('Labels saved')
