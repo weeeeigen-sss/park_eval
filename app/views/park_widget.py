@@ -112,9 +112,9 @@ class ParkWidget(QWidget):
         # Option checkboxs
         option_layout = QHBoxLayout()
 
-        self.first_park = QCheckBox('初回入庫')
-        self.first_park.stateChanged.connect(self.on_first_park_changed)
-        option_layout.addWidget(self.first_park)
+        self.is_first = QCheckBox('初回入庫')
+        self.is_first.stateChanged.connect(self.on_first_park_changed)
+        option_layout.addWidget(self.is_first)
 
         self.gt_unknown = QCheckBox('GT不明')
         self.gt_unknown.stateChanged.connect(self.on_gt_unknown_changed)
@@ -135,6 +135,9 @@ class ParkWidget(QWidget):
     def on_combo_changed(self, index):
         if self.info is not None:
             self.info.set(Status(index))
+
+            self.is_first.setEnabled(self.info.vehicle_status == 'Stop' or self.info.status == Status.Wrong_Out)
+
 
     def on_first_park_changed(self, check):
         if self.info is not None:
@@ -243,9 +246,9 @@ class ParkWidget(QWidget):
 
         # Update status
         self.combo.setEnabled(info.vehicle_status != 'Moving')
-        self.first_park.setEnabled(info.vehicle_status == 'Stop')
+        self.is_first.setEnabled(info.vehicle_status == 'Stop' or info.status == Status.Wrong_Out)
 
-        self.first_park.setChecked(info.is_first_park)
+        self.is_first.setChecked(info.is_first)
         self.gt_unknown.setChecked(info.is_gt_unknown)
         self.miss_in.setChecked(info.is_miss_in)
         self.miss_out.setChecked(info.is_miss_out)

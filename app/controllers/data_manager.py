@@ -1,5 +1,6 @@
 import os
 import csv
+from datetime import datetime
 
 from app.models.parking_info import ParkingInfo
 from app.types import Status
@@ -17,6 +18,7 @@ def load(path: str):
     lots = []
     for json_file in json_files:
         info = ParkingInfo(os.path.join(meta_dir, json_file))
+        print(info.json_file, info.timestamp)
         infos.append(info)
         if not info.lot in lots:
             lots.append(info.lot)
@@ -39,8 +41,8 @@ def load(path: str):
                     if 'is_gt_unknown' in row:
                         match[0].is_gt_unknown = bool(int(row['is_gt_unknown']))
 
-                    if 'is_first_park' in row:
-                        match[0].is_first_park = bool(int(row['is_first_park']))
+                    if 'is_first' in row:
+                        match[0].is_first = bool(int(row['is_first']))
 
                     if 'status' in row:
                         match[0].status = Status(int(row['status']))
@@ -64,25 +66,17 @@ def save_label(path: str, infos: list[ParkingInfo]):
                 'is_uncertain',
                 'vehicle_status',
 
-                'vehicle_xmin',
-                'vehicle_ymin',
-                'vehicle_xmax',
-                'vehicle_ymax',
-                'vehicle_wdith',
-                'vehicle_height',
+                'vehicle_xmin', 'vehicle_ymin',
+                'vehicle_xmax', 'vehicle_ymax',
+                'vehicle_wdith', 'vehicle_height',
                 'vehicle_score',
 
-                'lpr_top',
-                'top_quality',
-                'lpr_bottom',
-                'bottom_quality',
+                'lpr_top', 'top_quality',
+                'lpr_bottom', 'bottom_quality',
 
-                'plate_xmin',
-                'plate_ymin',
-                'plate_xmax',
-                'plate_ymax',
-                'plate_width',
-                'plate_height',
+                'plate_xmin', 'plate_ymin',
+                'plate_xmax', 'plate_ymax',
+                'plate_width', 'plate_height',
                 'plate_score',
 
                 'plate_confidence',
@@ -93,7 +87,7 @@ def save_label(path: str, infos: list[ParkingInfo]):
                 'is_miss_in',
                 'is_miss_out',
                 'is_gt_unknown',
-                'is_first_park',
+                'is_first',
                 'status',
                 'status_label'
                 ])
@@ -128,7 +122,7 @@ def save_label(path: str, infos: list[ParkingInfo]):
                     f'{int(info.is_miss_in)}',
                     f'{int(info.is_miss_out)}',
                     f'{int(info.is_gt_unknown)}',
-                    f'{int(info.is_first_park)}',
+                    f'{int(info.is_first)}',
                     f'{info.status.value}',
                     f'{info.status}'
                     ])

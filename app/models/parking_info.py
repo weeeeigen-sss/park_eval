@@ -61,7 +61,7 @@ class ParkingInfo:
                 self.is_miss_in = False
                 self.is_miss_out = False
                 self.is_gt_unknown = False
-                self.is_first_park = False
+                self.is_first = False
 
     def name(self):
         name = self.timestamp + '_' + self.lot
@@ -80,7 +80,7 @@ class ParkingInfo:
         self.is_gt_unknown = gt_unknown
 
     def set_first_park(self, first_park):
-        self.is_first_park = first_park
+        self.is_first = first_park
 
     def is_conf_ng(self, threshold=0.3):
         if self.plate_confidence is not None and self.vehicle_status == 'Moving' and self.plate_confidence < threshold:
