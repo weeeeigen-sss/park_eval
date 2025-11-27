@@ -1,15 +1,26 @@
 import os
 import csv
-from datetime import datetime
+import json
+from datetime import datetime, timezone, timedelta
 
 from app.models.parking_info import ParkingInfo
 from app.types import Status
+from app.utlis import parse_timestamp, format_jst
 
 def load(path: str):
     # Load metadata json
     meta_dir = os.path.join(path, 'META')
     if not os.path.exists(meta_dir):
         return None, None
+    
+    threshold_jst = None
+    param_json = os.path.join(path, 'param.json')
+    if os.path.exists(param_json):
+        with open(param_json, "r", encoding="utf-8") as f:
+            params = json.load(f)
+            if 'datetime' in params and 'format' in params:
+                JST = timezone(timedelta(hours=9))
+                threshold_jst = datetime.strptime(params['datetime'], params['format']).replace(tzinfo=JST)
     
     json_files = [f for f in os.listdir(meta_dir) if f.endswith(".json")]
     json_files.sort()
@@ -18,7 +29,12 @@ def load(path: str):
     lots = []
     for json_file in json_files:
         info = ParkingInfo(os.path.join(meta_dir, json_file))
-        print(info.json_file, info.timestamp)
+        
+        if threshold_jst:
+            info_jst= parse_timestamp(info.timestamp)
+            if info_jst < threshold_jst:
+                continue
+       
         infos.append(info)
         if not info.lot in lots:
             lots.append(info.lot)
@@ -192,7 +208,7 @@ def eval(lots, infos: list[ParkingInfo]):
         '出庫見逃し': is_miss_out,
         '誤出庫': wrong_out,
         '全桁OK': detect_ok,
-        '全桁NG': ng_out + ng_shadow + ng_occlusion + ng_fp + ng_blur + ng_others,
+        '全桁NG': ng_out + ng_shadow + ng_occlusion + ng_fp + ng_blur + ng_overexposure + ng_ai + ng_others,
         '全桁NG（見切れ）': ng_out,
         '全桁NG（影）': ng_shadow,
         '全桁NG（Occlusion）': ng_occlusion,
