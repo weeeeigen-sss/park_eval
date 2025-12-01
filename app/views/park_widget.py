@@ -112,7 +112,7 @@ class ParkWidget(QWidget):
         # Option checkboxs
         option_layout = QHBoxLayout()
 
-        self.is_first = QCheckBox('初回入庫')
+        self.is_first = QCheckBox('初回')
         self.is_first.stateChanged.connect(self.on_first_park_changed)
         option_layout.addWidget(self.is_first)
 
@@ -130,7 +130,19 @@ class ParkWidget(QWidget):
 
         layout.addLayout(option_layout)
 
+        btn = QPushButton("Copy Widget Image")
+        btn.clicked.connect(self.copy_me)
+        layout.addWidget(btn)
+
         self.setLayout(layout)
+
+    def copy_me(self):
+        pix = QPixmap(self.size())
+        pix.fill(Qt.GlobalColor.transparent)
+        self.render(pix)
+
+        clipboard = QGuiApplication.clipboard()
+        clipboard.setPixmap(pix)
 
     def on_combo_changed(self, index):
         if self.info is not None:
@@ -229,23 +241,25 @@ class ParkWidget(QWidget):
         text += f'<font color="{color}">Vehicle_Status: {info.vehicle_status}</font><br>'
 
         color = "red" if index > 0 and info.lpr_top != infos[index - 1].lpr_top else normal_color
-        text += f'<font color="{color}">lpr_top: {info.lpr_top}</font><br>'
+        text += f'<font color="{color}">lpr_top: {info.lpr_top if info.lpr_top is not None else "N/A"}</font>'
+        color = "yellow" if info.is_top_format_ng() else normal_color
+        text += f'<font color="{color}"> ({"OK" if color != "yellow" else "NG"})</font><br>'
 
         color = "red" if index > 0 and info.lpr_bottom != infos[index - 1].lpr_bottom else normal_color
-        text += f'<font color="{color}">lpr_bottom: {info.lpr_bottom}</font><br>'
-
-        color = "yellow" if info.is_format_ng() else normal_color
-        text += f'<font color="{color}">Format: {"OK" if color != "yellow" else "NG"}</font><br>'
+        text += f'<font color="{color}">lpr_bottom: {info.lpr_bottom if info.lpr_bottom is not None else "N/A"}</font>'
+        color = "yellow" if info.is_bottom_format_ng() else normal_color
+        text += f'<font color="{color}"> ({"OK" if color != "yellow" else "NG"})</font><br>'
 
         text += f'<font color="{normal_color}">Score: {self.info.plate_score}<br>'
 
         color = "yellow" if info.is_conf_ng() else normal_color
-        text += f'<font color="{color}">Plate Confidence: {info.plate_confidence}</font><br>'
+        conf_text = f'{float(info.plate_confidence):.3f}' if info.plate_confidence is not None else 'N/A'
+        text += f'<font color="{color}">Plate Confidence: {conf_text}</font><br>'
 
         self.param_label.setText(text)
 
         # Update status
-        self.combo.setEnabled(info.vehicle_status != 'Moving')
+        # self.combo.setEnabled(info.vehicle_status != 'Moving')
         self.is_first.setEnabled(info.vehicle_status == 'Stop' or info.status == Status.Wrong_Out)
 
         self.is_first.setChecked(info.is_first)

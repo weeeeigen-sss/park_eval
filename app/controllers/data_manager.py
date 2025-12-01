@@ -208,6 +208,8 @@ def eval(lots, infos: list[ParkingInfo]):
                     ng_ai.append(info)
                 elif info.status == Status.NG_Others:
                     ng_others.append(info)
+                else:
+                    print('Unknown status:', info.lot, info.timestamp)
             
             is_occupied_last = info.is_occupied
 
@@ -216,6 +218,8 @@ def eval(lots, infos: list[ParkingInfo]):
 
     detect_all_f = [info for info in detect_all if info.is_first == True]
     detect_ok_f = [info for info in detect_ok if info.is_first == True]
+    wrong_out_f = [info for info in wrong_out if info.is_first == True]
+
     ng_out_f = [info for info in ng_out if info.is_first == True]
     ng_shadow_f = [info for info in ng_shadow if info.is_first == True]
     ng_occlusion_f = [info for info in ng_occlusion if info.is_first == True]
@@ -231,8 +235,8 @@ def eval(lots, infos: list[ParkingInfo]):
             len(detect_all)
         ),
         '車両総数': (
-            len(detect_all) - len(wrong_out) - len(ng_fp) - len(resend) + len(is_miss_out),
-            len(detect_all) - len(wrong_out) - len(ng_fp) - len(resend) + len(is_miss_out),
+            len(detect_all) - len(wrong_out) - len(ng_fp) - len(resend) + len(is_miss_out) + len(is_miss_in),
+            len(detect_all) - len(wrong_out) - len(ng_fp) - len(resend) + len(is_miss_out) + len(is_miss_in),
         ),
         '入庫見逃し': (
             len(is_miss_in),
@@ -244,7 +248,7 @@ def eval(lots, infos: list[ParkingInfo]):
         ),
         '誤出庫': (
             len(wrong_out),
-            len(wrong_out),
+            len(wrong_out_f),
         ),
         '全桁OK': (
             len(detect_ok),
@@ -311,7 +315,8 @@ def save_eval(path: str, lots, infos: list[ParkingInfo]):
     path = os.path.join(path, 'eval.csv')
     with open(path, 'w', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f)
-        for k,v in eval_results.items():
-            writer.writerow([k, v])
+        writer.writerow(['項目', 'meta', 'first'])
+        for k,(all, first) in eval_results.items():
+            writer.writerow([k, all, first])
 
     return path, eval_results
