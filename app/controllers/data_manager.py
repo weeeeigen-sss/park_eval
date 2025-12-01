@@ -145,12 +145,25 @@ def save_label(path: str, infos: list[ParkingInfo]):
     return path
 
 def eval(lots, infos: list[ParkingInfo]):
-    detect_all = detect_ok = 0
-    ng_out = ng_shadow = ng_occlusion = ng_fp = ng_blur = ng_overexposure = ng_ai = ng_others = 0
-    wrong_out = 0
-    is_miss_in = is_miss_out = is_gt_unknown = 0
+    detect_all = []
+    detect_ok = []
 
-    resend = 0
+    ng_out = []
+    ng_shadow = []
+    ng_occlusion = []
+    ng_fp = []
+    ng_blur = []
+    ng_overexposure = []
+    ng_ai = []
+    ng_others = []
+
+    wrong_out = []
+
+    is_miss_in = []
+    is_miss_out = []
+    is_gt_unknown = []
+
+    resend = []
     is_occupied_last = False
 
     infos_wo_moving = [info for info in infos if info.vehicle_status != 'Moving']
@@ -161,66 +174,136 @@ def eval(lots, infos: list[ParkingInfo]):
                 continue
 
             if info.status == Status.Wrong_Out:
-                wrong_out += 1
+                wrong_out.append(info)
 
             if info.is_miss_in:
-                is_miss_in += 1
+                is_miss_in.append(info)
             if info.is_miss_out:
-                is_miss_out += 1
+                is_miss_out.append(info)
             
             if info.is_occupied:
-                detect_all += 1
+                detect_all.append(info)
 
                 if is_occupied_last:
-                    resend += 1
+                    resend.append(info)
 
                 if info.is_gt_unknown:
-                    is_gt_unknown += 1
+                    is_gt_unknown.append(info)
 
                 if info.status == Status.OK:
-                    detect_ok += 1
+                    detect_ok.append(info)
                 elif info.status == Status.NG_Out:
-                    ng_out += 1
+                    ng_out.append(info)
                 elif info.status == Status.NG_Shadow:
-                    ng_shadow += 1
+                    ng_shadow.append(info)
                 elif info.status == Status.NG_Occlusion:
-                    ng_occlusion += 1
+                    ng_occlusion.append(info)
                 elif info.status == Status.NG_FP:
-                    ng_fp += 1  
+                    ng_fp.append(info)  
                 elif info.status == Status.NG_Blur:
-                    ng_blur += 1
+                    ng_blur.append(info)
                 elif info.status == Status.NG_OverExposure:
-                    ng_overexposure += 1
+                    ng_overexposure.append(info)
                 elif info.status == Status.NG_AI:
-                    ng_ai += 1
+                    ng_ai.append(info)
                 elif info.status == Status.NG_Others:
-                    ng_others += 1
+                    ng_others.append(info)
             
             is_occupied_last = info.is_occupied
 
             # if info.status == Status.NoLabel:
             #     print('No label data exists.')
 
+    detect_all_f = [info for info in detect_all if info.is_first == True]
+    detect_ok_f = [info for info in detect_ok if info.is_first == True]
+    ng_out_f = [info for info in ng_out if info.is_first == True]
+    ng_shadow_f = [info for info in ng_shadow if info.is_first == True]
+    ng_occlusion_f = [info for info in ng_occlusion if info.is_first == True]
+    ng_fp_f = [info for info in ng_fp if info.is_first == True]
+    ng_blur_f = [info for info in ng_blur if info.is_first == True]
+    ng_overexposure_f = [info for info in ng_overexposure if info.is_first == True]
+    ng_ai_f = [info for info in ng_ai if info.is_first == True]
+    ng_others_f = [info for info in ng_others if info.is_first == True]
+
     return {
-        '検知総数': detect_all,
-        '車両総数': detect_all - wrong_out - ng_fp - resend + is_miss_out,
-        '入庫見逃し': is_miss_in,
-        '出庫見逃し': is_miss_out,
-        '誤出庫': wrong_out,
-        '全桁OK': detect_ok,
-        '全桁NG': ng_out + ng_shadow + ng_occlusion + ng_fp + ng_blur + ng_overexposure + ng_ai + ng_others,
-        '全桁NG（見切れ）': ng_out,
-        '全桁NG（影）': ng_shadow,
-        '全桁NG（Occlusion）': ng_occlusion,
-        '全桁NG（FP）': ng_fp,
-        '全桁NG（Blur）': ng_blur,
-        '全桁NG（白飛び）': ng_overexposure,
-        '全桁NG（AIモデル）': ng_ai,
-        '全桁NG（その他）': ng_others,
-        'GT不明': is_gt_unknown,
-        '再送回数': resend,
-        '全桁精度（メタごと）': detect_ok / detect_all,
-        '全桁精度（見切れ/FP抜き）': detect_ok / (detect_all - ng_fp - ng_out)}
+        '検知総数': (
+            len(detect_all),
+            len(detect_all)
+        ),
+        '車両総数': (
+            len(detect_all) - len(wrong_out) - len(ng_fp) - len(resend) + len(is_miss_out),
+            len(detect_all) - len(wrong_out) - len(ng_fp) - len(resend) + len(is_miss_out),
+        ),
+        '入庫見逃し': (
+            len(is_miss_in),
+            len(is_miss_in),
+        ),
+        '出庫見逃し': (
+            len(is_miss_out),
+            len(is_miss_out),
+        ),
+        '誤出庫': (
+            len(wrong_out),
+            len(wrong_out),
+        ),
+        '全桁OK': (
+            len(detect_ok),
+            len(detect_ok_f),
+        ),
+        '全桁NG': (
+            len(ng_out) + len(ng_shadow) + len(ng_occlusion) + len(ng_fp) + len(ng_blur) + len(ng_overexposure) + len(ng_ai) + len(ng_others),
+            len(ng_out_f) + len(ng_shadow_f) + len(ng_occlusion_f) + len(ng_fp_f) + len(ng_blur_f) + len(ng_overexposure_f) + len(ng_ai_f) + len(ng_others_f),
+        ),
+        '全桁NG（見切れ）': (
+            len(ng_out),
+            len(ng_out_f),
+        ),
+        '全桁NG（影）': (
+            len(ng_shadow),
+            len(ng_shadow_f),
+        ),
+        '全桁NG（Occlusion）': (
+            len(ng_occlusion),
+            len(ng_occlusion_f),
+        ),
+        '全桁NG（FP）': (
+            len(ng_fp),
+            len(ng_fp_f),
+        ),
+        '全桁NG（Blur）': (
+            len(ng_blur),
+            len(ng_blur_f),
+        ),
+        '全桁NG（白飛び）': (
+            len(ng_overexposure),
+            len(ng_overexposure_f),
+        ),
+        '全桁NG（AIモデル）': (
+            len(ng_ai),
+            len(ng_ai_f),
+        ),
+        '全桁NG（その他）': (
+            len(ng_others),
+            len(ng_others_f),
+        ),
+        'GT不明': (
+            len(is_gt_unknown),
+            len(is_gt_unknown)
+        ),
+        '再送回数': (
+            len(resend),
+            len(resend)
+        ),
+        '全桁精度（メタごと）': (
+            len(detect_ok) / len(detect_all),
+            len(detect_ok_f) / len(detect_all_f)
+        ),
+        '全桁精度（見切れ/FP抜き）': (
+            len(detect_ok) / (len(detect_all) - len(ng_fp) - len(ng_out)),
+            len(detect_ok_f) / (len(detect_all_f) - len(ng_fp_f) - len(ng_out_f))
+        )
+}
+
 
 def save_eval(path: str, lots, infos: list[ParkingInfo]):        
     eval_results = eval(lots, infos)
