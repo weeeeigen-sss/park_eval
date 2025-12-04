@@ -75,7 +75,6 @@ def load_clahe(path: str, infos: list[ParkingInfo]):
         for d in sorted(os.listdir(os.path.join(path, dir))):
             if d.startswith('.'):
                 continue
-
             split = os.path.splitext(d)[0].split('_')
             for info in infos:
                 if info.name() == d:
@@ -160,9 +159,11 @@ class MainWidget(QMainWindow):
             if not os.path.isdir(os.path.join(sys.argv[1], dir)):
                 continue
             infos, lots = load(os.path.join(sys.argv[1], dir))
+            print(f'Loaded {len(infos)} infos from {dir}')
             merged_infos.extend(infos)
 
         self.clahes: list[ClaheInfo] = load_clahe(clahe_path, merged_infos)
+        print(f'Loaded {len(self.clahes)} clahe infos from {clahe_path}')
 
 
         self.filter_indices = None
@@ -332,7 +333,7 @@ if __name__ == "__main__":
     # app.setStyleSheet("QWidget { font-size: 24pt; }")
 
     
-    window = MainWidget(sys.argv[1],'/Users/eigen/Desktop/clahe_results_all')
+    window = MainWidget(sys.argv[1], os.path.join(sys.argv[1], 'clahe_results'))
     # if len(sys.argv) == 2:
     #     window.load(sys.argv[1])
     window.show()
