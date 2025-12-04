@@ -1,14 +1,26 @@
 import os
 import csv
+import json
+from datetime import datetime, timezone, timedelta
 
 from app.models.parking_info import ParkingInfo
 from app.types import Status
+from app.utlis import parse_timestamp, format_jst
 
 def load(path: str):
     # Load metadata json
     meta_dir = os.path.join(path, 'META')
     if not os.path.exists(meta_dir):
         return None, None
+    
+    threshold_jst = None
+    param_json = os.path.join(path, 'param.json')
+    if os.path.exists(param_json):
+        with open(param_json, "r", encoding="utf-8") as f:
+            params = json.load(f)
+            if 'datetime' in params and 'format' in params:
+                JST = timezone(timedelta(hours=9))
+                threshold_jst = datetime.strptime(params['datetime'], params['format']).replace(tzinfo=JST)
     
     json_files = [f for f in os.listdir(meta_dir) if f.endswith(".json")]
     json_files.sort()
@@ -18,6 +30,12 @@ def load(path: str):
     for json_file in json_files:
         info = ParkingInfo(os.path.join(meta_dir, json_file))
         info.path = path
+        
+        if threshold_jst:
+            info_jst= parse_timestamp(info.timestamp)
+            if info_jst < threshold_jst:
+                continue
+       
         infos.append(info)
         if not info.lot in lots:
             lots.append(info.lot)
@@ -39,6 +57,9 @@ def load(path: str):
 
                     if 'is_gt_unknown' in row:
                         match[0].is_gt_unknown = bool(int(row['is_gt_unknown']))
+
+                    if 'is_first' in row:
+                        match[0].is_first = bool(int(row['is_first']))
 
                     if 'status' in row:
                         match[0].status = Status(int(row['status']))
@@ -62,32 +83,28 @@ def save_label(path: str, infos: list[ParkingInfo]):
                 'is_uncertain',
                 'vehicle_status',
 
-                'vehicle_xmin',
-                'vehicle_ymin',
-                'vehicle_xmax',
-                'vehicle_ymax',
-                'vehicle_wdith',
-                'vehicle_height',
+                'vehicle_xmin', 'vehicle_ymin',
+                'vehicle_xmax', 'vehicle_ymax',
+                'vehicle_wdith', 'vehicle_height',
                 'vehicle_score',
 
-                'lpr_top',
-                'top_quality',
-                'lpr_bottom',
-                'bottom_quality',
+                'lpr_top', 'top_quality',
+                'lpr_bottom', 'bottom_quality',
 
-                'plate_xmin',
-                'plate_ymin',
-                'plate_xmax',
-                'plate_ymax',
-                'plate_width',
-                'plate_height',
+                'plate_xmin', 'plate_ymin',
+                'plate_xmax', 'plate_ymax',
+                'plate_width', 'plate_height',
                 'plate_score',
 
                 'plate_confidence',
 
+                'plate_count',
+                'vehicle_count',
+
                 'is_miss_in',
                 'is_miss_out',
                 'is_gt_unknown',
+                'is_first',
                 'status',
                 'status_label'
                 ])
@@ -101,44 +118,53 @@ def save_label(path: str, infos: list[ParkingInfo]):
                     f'{info.is_uncertain}',
                     f'{info.vehicle_status}',
 
-                    f'{info.vehicle_xmin}',
-                    f'{info.vehicle_ymin}',
-                    f'{info.vehicle_xmax}',
-                    f'{info.vehicle_ymax}',
-                    f'{info.vehicle_wdith}',
-                    f'{info.vehicle_height}',
+                    f'{info.vehicle_xmin}', f'{info.vehicle_ymin}',
+                    f'{info.vehicle_xmax}', f'{info.vehicle_ymax}',
+                    f'{info.vehicle_wdith}', f'{info.vehicle_height}',
                     f'{info.vehicle_score}',
 
-                    f'{info.lpr_top}',
-                    f'{info.top_quality}',
-                    f'{info.lpr_bottom}',
-                    f'{info.bottom_quality}',
+                    f'{info.lpr_top}', f'{info.top_quality}',
+                    f'{info.lpr_bottom}', f'{info.bottom_quality}',
 
-                    f'{info.plate_xmin}',
-                    f'{info.plate_ymin}',
-                    f'{info.plate_xmax}',
-                    f'{info.plate_ymax}',
-                    f'{info.plate_width}',
-                    f'{info.plate_height}',
+                    f'{info.plate_xmin}', f'{info.plate_ymin}',
+                    f'{info.plate_xmax}', f'{info.plate_ymax}',
+                    f'{info.plate_width}', f'{info.plate_height}',
                     f'{info.plate_score}',
 
                     f'{info.plate_confidence}',
 
+                    f'{info.plate_count}',
+                    f'{info.vehicle_count}',
+
                     f'{int(info.is_miss_in)}',
                     f'{int(info.is_miss_out)}',
                     f'{int(info.is_gt_unknown)}',
+                    f'{int(info.is_first)}',
                     f'{info.status.value}',
                     f'{info.status}'
                     ])
     return path
 
 def eval(lots, infos: list[ParkingInfo]):
-    detect_all = detect_ok = 0
-    ng_out = ng_shadow = ng_occlusion = ng_fp = ng_blur = ng_others = 0
-    wrong_out = 0
-    is_miss_in = is_miss_out = is_gt_unknown = 0
+    detect_all = []
+    detect_ok = []
 
-    resend = 0
+    ng_out = []
+    ng_shadow = []
+    ng_occlusion = []
+    ng_fp = []
+    ng_blur = []
+    ng_overexposure = []
+    ng_ai = []
+    ng_others = []
+
+    wrong_out = []
+
+    is_miss_in = []
+    is_miss_out = []
+    is_gt_unknown = []
+
+    resend = []
     is_occupied_last = False
 
     infos_wo_moving = [info for info in infos if info.vehicle_status != 'Moving']
@@ -149,60 +175,140 @@ def eval(lots, infos: list[ParkingInfo]):
                 continue
 
             if info.status == Status.Wrong_Out:
-                wrong_out += 1
+                wrong_out.append(info)
 
             if info.is_miss_in:
-                is_miss_in += 1
+                is_miss_in.append(info)
             if info.is_miss_out:
-                is_miss_out += 1
+                is_miss_out.append(info)
             
             if info.is_occupied:
-                detect_all += 1
+                detect_all.append(info)
 
                 if is_occupied_last:
-                    resend += 1
+                    resend.append(info)
 
                 if info.is_gt_unknown:
-                    is_gt_unknown += 1
+                    is_gt_unknown.append(info)
 
                 if info.status == Status.OK:
-                    detect_ok += 1
+                    detect_ok.append(info)
                 elif info.status == Status.NG_Out:
-                    ng_out += 1
+                    ng_out.append(info)
                 elif info.status == Status.NG_Shadow:
-                    ng_shadow += 1
+                    ng_shadow.append(info)
                 elif info.status == Status.NG_Occlusion:
-                    ng_occlusion += 1
+                    ng_occlusion.append(info)
                 elif info.status == Status.NG_FP:
-                    ng_fp += 1  
+                    ng_fp.append(info)  
                 elif info.status == Status.NG_Blur:
-                    ng_blur += 1
+                    ng_blur.append(info)
+                elif info.status == Status.NG_OverExposure:
+                    ng_overexposure.append(info)
+                elif info.status == Status.NG_AI:
+                    ng_ai.append(info)
                 elif info.status == Status.NG_Others:
-                    ng_others += 1
+                    ng_others.append(info)
+                else:
+                    print('Unknown status:', info.lot, info.timestamp)
             
             is_occupied_last = info.is_occupied
 
             # if info.status == Status.NoLabel:
             #     print('No label data exists.')
 
+    detect_all_f = [info for info in detect_all if info.is_first == True]
+    detect_ok_f = [info for info in detect_ok if info.is_first == True]
+    wrong_out_f = [info for info in wrong_out if info.is_first == True]
+
+    ng_out_f = [info for info in ng_out if info.is_first == True]
+    ng_shadow_f = [info for info in ng_shadow if info.is_first == True]
+    ng_occlusion_f = [info for info in ng_occlusion if info.is_first == True]
+    ng_fp_f = [info for info in ng_fp if info.is_first == True]
+    ng_blur_f = [info for info in ng_blur if info.is_first == True]
+    ng_overexposure_f = [info for info in ng_overexposure if info.is_first == True]
+    ng_ai_f = [info for info in ng_ai if info.is_first == True]
+    ng_others_f = [info for info in ng_others if info.is_first == True]
+
     return {
-        '検知総数': detect_all,
-        '車両総数': detect_all - wrong_out - ng_fp - resend + is_miss_out,
-        '入庫見逃し': is_miss_in,
-        '出庫見逃し': is_miss_out,
-        '誤出庫': wrong_out,
-        '全桁OK': detect_ok,
-        '全桁NG': ng_out + ng_shadow + ng_occlusion + ng_fp + ng_blur + ng_others,
-        '全桁NG（見切れ）': ng_out,
-        '全桁NG（影）': ng_shadow,
-        '全桁NG（Occlusion）': ng_occlusion,
-        '全桁NG（FP）': ng_fp,
-        '全桁NG（Blur）': ng_blur,
-        '全桁NG（その他）': ng_others,
-        'GT不明': is_gt_unknown,
-        '再送回数': resend,
-        '全桁精度（メタごと）': detect_ok / detect_all,
-        '全桁精度（見切れ/FP抜き）': detect_ok / (detect_all - ng_fp - ng_out)}
+        '検知総数': (
+            len(detect_all),
+            len(detect_all)
+        ),
+        '車両総数': (
+            len(detect_all) - len(wrong_out) - len(ng_fp) - len(resend) + len(is_miss_out) + len(is_miss_in),
+            len(detect_all) - len(wrong_out) - len(ng_fp) - len(resend) + len(is_miss_out) + len(is_miss_in),
+        ),
+        '入庫見逃し': (
+            len(is_miss_in),
+            len(is_miss_in),
+        ),
+        '出庫見逃し': (
+            len(is_miss_out),
+            len(is_miss_out),
+        ),
+        '誤出庫': (
+            len(wrong_out),
+            len(wrong_out_f),
+        ),
+        '全桁OK': (
+            len(detect_ok),
+            len(detect_ok_f),
+        ),
+        '全桁NG': (
+            len(ng_out) + len(ng_shadow) + len(ng_occlusion) + len(ng_fp) + len(ng_blur) + len(ng_overexposure) + len(ng_ai) + len(ng_others),
+            len(ng_out_f) + len(ng_shadow_f) + len(ng_occlusion_f) + len(ng_fp_f) + len(ng_blur_f) + len(ng_overexposure_f) + len(ng_ai_f) + len(ng_others_f),
+        ),
+        '全桁NG（見切れ）': (
+            len(ng_out),
+            len(ng_out_f),
+        ),
+        '全桁NG（影）': (
+            len(ng_shadow),
+            len(ng_shadow_f),
+        ),
+        '全桁NG（Occlusion）': (
+            len(ng_occlusion),
+            len(ng_occlusion_f),
+        ),
+        '全桁NG（FP）': (
+            len(ng_fp),
+            len(ng_fp_f),
+        ),
+        '全桁NG（Blur）': (
+            len(ng_blur),
+            len(ng_blur_f),
+        ),
+        '全桁NG（白飛び）': (
+            len(ng_overexposure),
+            len(ng_overexposure_f),
+        ),
+        '全桁NG（AIモデル）': (
+            len(ng_ai),
+            len(ng_ai_f),
+        ),
+        '全桁NG（その他）': (
+            len(ng_others),
+            len(ng_others_f),
+        ),
+        'GT不明': (
+            len(is_gt_unknown),
+            len(is_gt_unknown)
+        ),
+        '再送回数': (
+            len(resend),
+            len(resend)
+        ),
+        '全桁精度（メタごと）': (
+            len(detect_ok) / len(detect_all),
+            len(detect_ok_f) / len(detect_all_f)
+        ),
+        '全桁精度（見切れ/FP抜き）': (
+            len(detect_ok) / (len(detect_all) - len(ng_fp) - len(ng_out)),
+            len(detect_ok_f) / (len(detect_all_f) - len(ng_fp_f) - len(ng_out_f))
+        )
+}
+
 
 def save_eval(path: str, lots, infos: list[ParkingInfo]):        
     eval_results = eval(lots, infos)
@@ -210,7 +316,8 @@ def save_eval(path: str, lots, infos: list[ParkingInfo]):
     path = os.path.join(path, 'eval.csv')
     with open(path, 'w', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f)
-        for k,v in eval_results.items():
-            writer.writerow([k, v])
+        writer.writerow(['項目', 'meta', 'first'])
+        for k,(all, first) in eval_results.items():
+            writer.writerow([k, all, first])
 
     return path, eval_results

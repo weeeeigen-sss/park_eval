@@ -1,5 +1,6 @@
 import os
 import json
+import regex
 
 from app.types import Status
 
@@ -54,10 +55,15 @@ class ParkingInfo:
                 self.vehicle_height = vehicle_bbox.get("height")
                 self.vehicle_score = vehicle_bbox.get("score")
 
+                duration = info.get("Duration", {})
+                self.plate_count = duration.get("plate_count")
+                self.vehicle_count = duration.get("vehicle_count")
+
                 self.status = Status.NoLabel
                 self.is_miss_in = False
                 self.is_miss_out = False
                 self.is_gt_unknown = False
+                self.is_first = False
 
     def name(self):
         name = self.timestamp + '_' + self.lot
@@ -79,3 +85,34 @@ class ParkingInfo:
 
     def set_gt_unknown(self, gt_unknown):
         self.is_gt_unknown = gt_unknown
+
+    def set_first_park(self, first_park):
+        self.is_first = first_park
+
+    def is_conf_ng(self, threshold=0.3):
+        if self.plate_confidence is not None and self.vehicle_status == 'Moving' and self.plate_confidence < threshold:
+            return True
+        return False
+    
+    def is_top_format_ng(self):
+        if self.vehicle_status == 'Stop':
+            if self.lpr_top is None:
+                return True
+        
+            top_format = '^((\p{Han}{1,4}|\p{Hiragana}{3}|(\p{Han}|\p{Katakana}){3})([1-8][0-9A-Z]{2}|[0-9]{2}))$'
+            top_match = regex.match(top_format, self.lpr_top)
+            if top_match is None:
+                return True
+        return False
+    
+    def is_bottom_format_ng(self):
+        if self.vehicle_status == 'Stop':         
+            if self.lpr_bottom is None:
+                return True
+            
+            bottom_format = '^(\p{Hiragana}|[YABEHKMT])([1-9]{1}\d{1}-\d{2}|・[1-9]{1}\d{2}|・{2}[1-9]{1}\d{1}|・{3}[1-9]{1})$'
+            bottom_match = regex.match(bottom_format, self.lpr_bottom)
+            if bottom_match is None:
+                return True
+            
+        return False
