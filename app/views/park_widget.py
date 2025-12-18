@@ -8,6 +8,7 @@ from PyQt6.QtCore import Qt
 
 
 from app.views.image_label import ClickableImageLabel
+from app.views.json_widget import JsonWindow
 from app.models.parking_info import ParkingInfo
 from app.types import Status, text_for
 from app.utlis import parse_timestamp, format_jst, diff_timestamp
@@ -35,7 +36,15 @@ class ParkWidget(QWidget):
         self.json_copy.setToolTip("Reveal in Finder")
         self.json_copy.setCursor(Qt.CursorShape.PointingHandCursor)
         self.json_copy.clicked.connect(self.on_json_clicked)
-        json_row.addWidget(self.json_copy)
+        json_row.addWidget(self.json_copy)  
+
+        self.json_open = QPushButton()
+        self.json_open.setIcon(QIcon.fromTheme("dialog-information"))
+        self.json_open.setFixedSize(24, 24)
+        self.json_open.setToolTip("Open JSON Viewer")
+        self.json_open.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.json_open.clicked.connect(self.show_json)
+        json_row.addWidget(self.json_open)
 
         json_row.addStretch()
         layout.addLayout(json_row)
@@ -176,6 +185,13 @@ class ParkWidget(QWidget):
                 elif sys.platform == "darwin":
                     # Finderで選択状態で開く（macOS専用）
                     subprocess.run(["open", "-R", str(Path(self.info.json_path))])
+
+    def show_json(self):
+        if self.info is None:
+            return
+        # 新しいウィンドウを生成して表示
+        self.json_window = JsonWindow(self.info.json_data)
+        self.json_window.show()
 
     def on_time_clicked(self):
         if self.info is not None:

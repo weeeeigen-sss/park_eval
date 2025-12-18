@@ -23,6 +23,8 @@ class MainWidget(QMainWindow):
         self.park_widgets: list[ParkWidget] = []
         self.filter_widgets: list[FilterWidget] = []
 
+        self.json_window = None
+
         self.tabs = QTabWidget()
         
         # Label tab
@@ -317,6 +319,27 @@ class MainWidget(QMainWindow):
                 last = info
         
         self.update_views()
+
+    def eval_movement(self, threshold_y=0):
+        for lot in self.lots:
+            for info in [self_info for self_info in self.infos if self_info.lot == lot]:
+                if info.vehicle_status == 'Stop':
+                    # 誤出庫の場合、その後のStopは1回無視
+                    if wrong_out_happened:
+                        wrong_out_happened = False
+                    else:
+                        last_stop = info
+                    continue
+
+                if info.status == Status.Wrong_Out:
+                    wrong_out_happened = True
+                    continue
+                
+                if info.status == Status.MovingOut:
+                    if last_stop is not None:
+                        if info.move_plate_end_y is not None and info.move_plate_end_y < threshold_y:
+                            info.set_stop_info(last_stop)
+                            continue
 
 
     def update_eval_table(self, eval_results=None):

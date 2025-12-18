@@ -12,11 +12,12 @@ class ParkingInfo:
 
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
-            
+
             parking_lot_info = data["Inference_Results"][0]["parking_lot_info"]
             for info in parking_lot_info:
                 if info["Lot"] != lot:
                     continue
+                self.json_data = data
                 self.lot = info["Lot"]
                 self.timestamp = str(info.get("TimeStamp"))
                 self.json_path = json_path
@@ -57,11 +58,20 @@ class ParkingInfo:
                 self.plate_count = duration.get("plate_count")
                 self.vehicle_count = duration.get("vehicle_count")
 
+                # For movement eval
+                movement = info.get("Movement", {})
+                plate = movement.get("Plate", {})
+                end = plate.get("End", {})
+                self.move_plate_end_y = end.get("y")
+                self.stop_info:ParkingInfo = None
+
+
                 self.status = Status.NoLabel
                 self.is_miss_in = False
                 self.is_miss_out = False
                 self.is_gt_unknown = False
                 self.is_first = False
+
 
     def name(self):
         name = self.timestamp + '_' + self.lot
@@ -69,6 +79,9 @@ class ParkingInfo:
     
     def set(self, status: Status):
         self.status = status
+
+    def set_stop_info(self, stop_info):
+        self.stop_info = stop_info
 
     def set_miss_in(self, miss_in):
         self.is_miss_in = miss_in
@@ -108,4 +121,17 @@ class ParkingInfo:
             if bottom_match is None:
                 return True
             
+        return False
+    
+    def diff_move_y(self):
+        if self.status != Status.MovingOut or self.stop_info is None :
+            return None
+        
+        return self.move_plate_end_y - self.stop_info.move_plate_end_y
+    
+    def is_move_y_ng(self, threshold=0):
+        diff_y = self.diff_move_y()
+        if diff_y is not None and diff_y < threshold:
+            return True
+        
         return False
