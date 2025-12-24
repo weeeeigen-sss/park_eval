@@ -14,6 +14,7 @@ class ClickableImageLabel(QLabel):
         self.scale = scale
         self.image_path = None
         self.show_border = show_border
+        self.info: ParkingInfo = None
         
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))  # 手のアイコンに変更
 
@@ -46,10 +47,10 @@ class ClickableImageLabel(QLabel):
         self.update()
 
     def paintEvent(self, event):
-        # まず通常の QLabel 描画（画像など）
-        super().paintEvent(event)
+        super().paintEvent(event)            
 
         if self.show_border and self.info is not None:
+            # Paint for vehicle status
             painter = QPainter(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
@@ -68,3 +69,21 @@ class ClickableImageLabel(QLabel):
                 pen.setStyle(Qt.PenStyle.DotLine)
             painter.setPen(pen)
             painter.drawRect(rect)
+
+            # Paint plate bbox rect
+            if self.info.plate_xmin is not None and self.info.plate_ymin is not None and self.info.plate_xmax is not None and self.info.plate_ymax is not None:
+                # 画像の表示サイズに合わせて座標をスケーリング
+                # w_ratio = self.width() / (self.pixmap().width())
+                # h_ratio = self.height() / (self.pixmap().height())
+
+                plate_rect = QRect(
+                    int(self.info.plate_xmin / self.scale),
+                    int(self.info.plate_ymin / self.scale),
+                    int((self.info.plate_xmax - self.info.plate_xmin) / self.scale),
+                    int((self.info.plate_ymax - self.info.plate_ymin) / self.scale)
+                )
+
+                pen = QPen(QColor(0, 0, 255, 255), 2)
+                pen.setStyle(Qt.PenStyle.SolidLine)
+                painter.setPen(pen)
+                painter.drawRect(plate_rect)
