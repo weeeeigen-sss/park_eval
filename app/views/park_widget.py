@@ -82,19 +82,33 @@ class ParkWidget(QWidget):
         layout.addLayout(jst_row)
 
         # RAW Image
-        self.raw_label = ClickableImageLabel(5)
+        self.raw_label = ClickableImageLabel(show_border=True, scale=5)
         layout.addWidget(self.raw_label)
 
         # Plate Image
+        plate_layout = QHBoxLayout()
         self.plate_label = ClickableImageLabel()
-        self.plate_label.setFixedSize(309, 159)
+        self.plate_label.setFixedSize(240, 100)
         self.plate_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self.plate_label)
+        plate_layout.addWidget(self.plate_label)
+
+        plate_info_layout = QVBoxLayout()
+        self.plate_lp_label = QLabel('LPR Result')
+        plate_info_layout.addWidget(self.plate_lp_label)
+
+        self.lp_button = QPushButton('Copy LP')
+        self.lp_button.clicked.connect(self.on_lp_clicked)
+        plate_info_layout.addWidget(self.lp_button)
+        plate_info_layout.addStretch()
+        plate_layout.addLayout(plate_info_layout)
+        plate_layout.addStretch()
+
+        layout.addLayout(plate_layout)
 
         mid_layout = QHBoxLayout()
 
         # Vehicle Image
-        self.vehicle_label = ClickableImageLabel(4)
+        self.vehicle_label = ClickableImageLabel(scale=4)
         self.vehicle_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         mid_layout.addWidget(self.vehicle_label)        
 
@@ -104,9 +118,7 @@ class ParkWidget(QWidget):
         self.param_label = QLabel()
         mid_right_layout.addWidget(self.param_label)
 
-        self.lp_button = QPushButton('Copy LP')
-        self.lp_button.clicked.connect(self.on_lp_clicked)
-        mid_right_layout.addWidget(self.lp_button)
+        
 
         mid_layout.addLayout(mid_right_layout)
 
@@ -217,13 +229,13 @@ class ParkWidget(QWidget):
 
         # Update images
         path = os.path.join(it_dir, info.name() + '_plate.bmp')
-        self.plate_label.set(path)
+        self.plate_label.set(path, info)
 
         path = os.path.join(it_dir, info.name() + '_vehicle.jpg')
-        self.vehicle_label.set(path)
+        self.vehicle_label.set(path, info)
 
         path = os.path.join(raw_dir, info.name() + '_raw.jpg')
-        self.raw_label.set(path)
+        self.raw_label.set(path, info)
 
 
         # Update info label
@@ -256,23 +268,26 @@ class ParkWidget(QWidget):
         color = "red" if index > 0 and info.vehicle_status != infos[index - 1].vehicle_status else normal_color
         text += f'<font color="{color}">Vehicle_Status: {info.vehicle_status}</font><br>'
 
-        color = "red" if index > 0 and info.lpr_top != infos[index - 1].lpr_top else normal_color
-        text += f'<font color="{color}">lpr_top: {info.lpr_top if info.lpr_top is not None else "N/A"}</font>'
-        color = "yellow" if info.is_top_format_ng() else normal_color
-        text += f'<font color="{color}"> ({"OK" if color != "yellow" else "NG"})</font><br>'
-
-        color = "red" if index > 0 and info.lpr_bottom != infos[index - 1].lpr_bottom else normal_color
-        text += f'<font color="{color}">lpr_bottom: {info.lpr_bottom if info.lpr_bottom is not None else "N/A"}</font>'
-        color = "yellow" if info.is_bottom_format_ng() else normal_color
-        text += f'<font color="{color}"> ({"OK" if color != "yellow" else "NG"})</font><br>'
-
-        text += f'<font color="{normal_color}">Score: {self.info.plate_score}<br>'
+        score_text = f'{float(info.plate_score):.3f}' if info.plate_score is not None else 'N/A'
+        text += f'<font color="{normal_color}">Plate Score: {score_text}</font><br>'
 
         color = "yellow" if info.is_conf_ng() else normal_color
         conf_text = f'{float(info.plate_confidence):.3f}' if info.plate_confidence is not None else 'N/A'
         text += f'<font color="{color}">Plate Confidence: {conf_text}</font><br>'
 
         self.param_label.setText(text)
+
+        plate_text = ''
+        color = "red" if index > 0 and info.lpr_top != infos[index - 1].lpr_top else normal_color
+        plate_text += f'<font color="{color}">{info.lpr_top if info.lpr_top is not None else "N/A"}</font>'
+        color = "yellow" if info.is_top_format_ng() else normal_color
+        plate_text += f'<font color="{color}"> ({"OK" if color != "yellow" else "NG"})</font><br>'
+
+        color = "red" if index > 0 and info.lpr_bottom != infos[index - 1].lpr_bottom else normal_color
+        plate_text += f'<font color="{color}">{info.lpr_bottom if info.lpr_bottom is not None else "N/A"}</font>'
+        color = "yellow" if info.is_bottom_format_ng() else normal_color
+        plate_text += f'<font color="{color}"> ({"OK" if color != "yellow" else "NG"})</font><br>'
+        self.plate_lp_label.setText(plate_text)
 
         # Update status
         # self.combo.setEnabled(info.vehicle_status != 'Moving')

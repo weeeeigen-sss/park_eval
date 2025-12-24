@@ -104,9 +104,10 @@ class MainWidget(QMainWindow):
         self.auto_label_button.clicked.connect(self.auto_label_moving)
         toolbar.addWidget(self.auto_label_button)
 
-        # self.eval_button = QPushButton('Eval')
-        # self.eval_button.clicked.connect(self.save_eval)
-        # toolbar.addWidget(self.eval_button)
+        self.show_border = QCheckBox('Show Border')
+        self.show_border.setChecked(True)
+        self.show_border.stateChanged.connect(self.on_show_border_changed)
+        toolbar.addWidget(self.show_border)
 
         # self.setLayout(layout)
         self.setCentralWidget(self.tabs)
@@ -358,6 +359,11 @@ class MainWidget(QMainWindow):
             self.eval_view.setItem(i, 2, item_first)
             
         self.eval_view.resizeColumnsToContents()
+
+    def on_show_border_changed(self, state):
+        for park_widget in self.park_widgets:
+            park_widget.raw_label.setBorderVisible(state == Qt.CheckState.Checked.value)
+        self.update_views()
 
     def on_tabbar_clicked(self, index):
         if index == 1:

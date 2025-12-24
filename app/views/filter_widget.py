@@ -34,7 +34,7 @@ class FilterWidget(QFrame):
         self.info_label = QLabel()
         layout.addWidget(self.info_label)
 
-        self.raw_label = ClickableImageLabel(10)
+        self.raw_label = ClickableImageLabel(scale=10)
         layout.addWidget(self.raw_label)
 
         self.combo = QComboBox()
@@ -52,6 +52,6 @@ class FilterWidget(QFrame):
         self.info_label.setText(f'Lot: {info.lot}\nIs_Occupied: {info.is_occupied}\nVehicle_Status: {info.vehicle_status}\ntop: {info.lpr_top}\nbottom: {info.lpr_bottom}')
 
         path = os.path.join(raw_dir, info.name() + '_raw.jpg')
-        self.raw_label.set(path)
+        self.raw_label.set(path, info)
 
         self.combo.setCurrentIndex(info.status.value)
