@@ -82,7 +82,7 @@ class ParkWidget(QWidget):
         layout.addLayout(jst_row)
 
         # RAW Image
-        self.raw_label = ClickableImageLabel(show_border=True, scale=5)
+        self.raw_label = ClickableImageLabel(show_status_rect=True, show_plate_rect=True, show_vehicle_rect=True, scale=5)
         layout.addWidget(self.raw_label)
 
         # Plate Image

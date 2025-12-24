@@ -8,12 +8,14 @@ from pathlib import Path
 from app.models.parking_info import ParkingInfo
 
 class ClickableImageLabel(QLabel):
-    def __init__(self, show_border: bool = False, scale:int=1):
+    def __init__(self, show_status_rect: bool = False, show_plate_rect: bool = False, show_vehicle_rect: bool = False, scale:int=1):
         super().__init__()
 
         self.scale = scale
         self.image_path = None
-        self.show_border = show_border
+        self.show_status_rect = show_status_rect
+        self.show_plate_rect = show_plate_rect
+        self.show_vehicle_rect = show_vehicle_rect
         self.info: ParkingInfo = None
         
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))  # 手のアイコンに変更
@@ -42,14 +44,25 @@ class ClickableImageLabel(QLabel):
                 subprocess.run(["open", "-R", str(self.image_path)])
         super().mousePressEvent(event)
 
-    def setBorderVisible(self, visible: bool):
-        self.show_border = visible
+    def set_status_visible(self, visible: bool):
+        self.show_status_rect = visible
+        self.update()
+
+    def set_plate_visible(self, visible: bool):
+        self.show_plate_rect = visible
+        self.update()
+
+    def set_vehicle_visible(self, visible: bool):
+        self.show_vehicle_rect = visible
         self.update()
 
     def paintEvent(self, event):
-        super().paintEvent(event)            
+        super().paintEvent(event)    
 
-        if self.show_border and self.info is not None:
+        if self.info is None:
+            return
+
+        if self.show_status_rect:
             # Paint for vehicle status
             painter = QPainter(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -70,7 +83,8 @@ class ClickableImageLabel(QLabel):
             painter.setPen(pen)
             painter.drawRect(rect)
 
-            # Paint plate bbox rect
+        # Paint plate bbox rect
+        if self.show_plate_rect:
             if self.info.plate_xmin is not None and self.info.plate_ymin is not None and self.info.plate_xmax is not None and self.info.plate_ymax is not None:
                 # 画像の表示サイズに合わせて座標をスケーリング
                 # w_ratio = self.width() / (self.pixmap().width())
@@ -87,3 +101,18 @@ class ClickableImageLabel(QLabel):
                 pen.setStyle(Qt.PenStyle.SolidLine)
                 painter.setPen(pen)
                 painter.drawRect(plate_rect)
+
+        # Paint vehicle bbox rect
+        if self.show_vehicle_rect:
+            if self.info.vehicle_xmax is not None and self.info.vehicle_ymax is not None and self.info.vehicle_xmin is not None and self.info.vehicle_ymin is not None:
+                vehicle_rect = QRect(
+                    int(self.info.vehicle_xmin / self.scale),
+                    int(self.info.vehicle_ymin / self.scale),
+                    int((self.info.vehicle_xmax - self.info.vehicle_xmin) / self.scale),
+                    int((self.info.vehicle_ymax - self.info.vehicle_ymin) / self.scale)
+                )
+
+                pen = QPen(QColor(255, 0, 0, 255), 2)
+                pen.setStyle(Qt.PenStyle.SolidLine)
+                painter.setPen(pen)
+                painter.drawRect(vehicle_rect)

@@ -104,10 +104,20 @@ class MainWidget(QMainWindow):
         self.auto_label_button.clicked.connect(self.auto_label_moving)
         toolbar.addWidget(self.auto_label_button)
 
-        self.show_border = QCheckBox('Show Border')
-        self.show_border.setChecked(True)
-        self.show_border.stateChanged.connect(self.on_show_border_changed)
-        toolbar.addWidget(self.show_border)
+        self.show_status = QCheckBox('Show Status')
+        self.show_status.setChecked(True)
+        self.show_status.stateChanged.connect(self.on_show_status_changed)
+        toolbar.addWidget(self.show_status)
+
+        self.show_plate = QCheckBox('Show Plate')
+        self.show_plate.setChecked(True)
+        self.show_plate.stateChanged.connect(self.on_show_plate_changed)
+        toolbar.addWidget(self.show_plate)
+
+        self.show_vehicle = QCheckBox('Show Vehicle')
+        self.show_vehicle.setChecked(True)
+        self.show_vehicle.stateChanged.connect(self.on_show_vehicle_changed)
+        toolbar.addWidget(self.show_vehicle)
 
         # self.setLayout(layout)
         self.setCentralWidget(self.tabs)
@@ -360,9 +370,19 @@ class MainWidget(QMainWindow):
             
         self.eval_view.resizeColumnsToContents()
 
-    def on_show_border_changed(self, state):
+    def on_show_status_changed(self, state):
         for park_widget in self.park_widgets:
-            park_widget.raw_label.setBorderVisible(state == Qt.CheckState.Checked.value)
+            park_widget.raw_label.set_status_visible(state == Qt.CheckState.Checked.value)
+        self.update_views()
+
+    def on_show_plate_changed(self, state):
+        for park_widget in self.park_widgets:
+            park_widget.raw_label.set_plate_visible(state == Qt.CheckState.Checked.value)
+        self.update_views()
+
+    def on_show_vehicle_changed(self, state):
+        for park_widget in self.park_widgets:
+            park_widget.raw_label.set_vehicle_visible(state == Qt.CheckState.Checked.value)
         self.update_views()
 
     def on_tabbar_clicked(self, index):
