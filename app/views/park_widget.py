@@ -162,7 +162,7 @@ class ParkWidget(QWidget):
 
     def on_first_park_changed(self, check):
         if self.info is not None:
-            self.info.set_first_park(check == Qt.CheckState.Checked.value)
+            self.info.set_is_first(check == Qt.CheckState.Checked.value)
 
     def on_gt_unknown_changed(self, check):
         if self.info is not None:
@@ -271,6 +271,8 @@ class ParkWidget(QWidget):
         color = "yellow" if info.is_conf_ng() else normal_color
         conf_text = f'{float(info.plate_confidence):.3f}' if info.plate_confidence is not None else 'N/A'
         text += f'<font color="{color}">Plate Confidence: {conf_text}</font><br>'
+
+        text += f'<font color="{normal_color}">Y: {info.move_plate_end_y}({info.diff_move_y()})</font><br>'
 
         self.param_label.setText(text)
 
