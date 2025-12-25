@@ -192,7 +192,7 @@ class MainWidget(QMainWindow):
             self.info_index = self.frames - 1
         else:
             # Filter by status
-            self.filter_infos = [info for info in self.current_infos if info.status == Status(filter_status_index - 1)]
+            self.filter_infos = [info for info in self.current_infos if info.status == Status(filter_status_index - 1)] if filter_status_index > 0 else self.current_infos
 
             # For no infos, reset filter
             if len(self.filter_infos) == 0:
@@ -223,6 +223,10 @@ class MainWidget(QMainWindow):
                 self.filter_infos = [info for info in self.filter_infos if info.is_bottom_format_ng()]
             elif filter_option_index == 11:
                 self.filter_infos = [info for info in self.filter_infos if not info.is_bottom_format_ng()]
+            elif filter_option_index == 12:
+                self.filter_infos = [info for info in self.filter_infos if info.is_move_y_ng()]
+            elif filter_option_index == 13:
+                self.filter_infos = [info for info in self.filter_infos if not info.is_move_y_ng()]
             
             # For no infos, reset filter
             if len(self.filter_infos) == 0:
@@ -268,11 +272,19 @@ class MainWidget(QMainWindow):
                     self.update_views()
 
             elif event.key() in key_status_map.keys():
-                if len(self.filter_infos) > 0:
+                if len(self.current_infos) > 0:
                     selected_status = key_status_map[event.key()]
 
                     info = self.current_infos[self.info_index]
                     info.set(selected_status)
+
+                    self.update_views()
+
+            elif event.key() == Qt.Key.Key_F:
+                if len(self.current_infos) > 0:
+                    current_info = self.current_infos[self.info_index]
+                    is_first = current_info.is_first
+                    current_info.set_is_first(not is_first)
 
                     self.update_views()
                     
@@ -328,10 +340,13 @@ class MainWidget(QMainWindow):
                         else:
                             info.set(Status.MovingOut)
                 last = info
-        
+        self.eval_movement()
         self.update_views()
 
     def eval_movement(self, threshold_y=0):
+        wrong_out_happened = False
+        last_stop = None
+
         for lot in self.lots:
             for info in [self_info for self_info in self.infos if self_info.lot == lot]:
                 if info.vehicle_status == 'Stop':
@@ -348,7 +363,7 @@ class MainWidget(QMainWindow):
                 
                 if info.status == Status.MovingOut:
                     if last_stop is not None:
-                        if info.move_plate_end_y is not None and info.move_plate_end_y < threshold_y:
+                        if info.move_plate_end_y is not None:
                             info.set_stop_info(last_stop)
                             continue
 

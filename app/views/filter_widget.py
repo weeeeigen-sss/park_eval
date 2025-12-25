@@ -25,7 +25,7 @@ class FilterWidget(QFrame):
         layout.addWidget(self.filter_combo)
 
         self.filter_option_combo = QComboBox()
-        self.filter_option_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し', '初回=True', '初回=False', 'PlateConf=NG', 'PlateConf=OK', 'TopFormat=NG', 'TopFormat=OK', 'BottomFormat=NG', 'BottomFormat=OK'])
+        self.filter_option_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し', '初回=True', '初回=False', 'PlateConf=NG', 'PlateConf=OK', 'TopFormat=NG', 'TopFormat=OK', 'BottomFormat=NG', 'BottomFormat=OK', 'MoveY=NG', 'MoveY=OK'])
         layout.addWidget(self.filter_option_combo)
 
         self.filter_index_label = QLabel()

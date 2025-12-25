@@ -21,6 +21,8 @@ def load(path: str):
             if 'datetime' in params and 'format' in params:
                 JST = timezone(timedelta(hours=9))
                 threshold_jst = datetime.strptime(params['datetime'], params['format']).replace(tzinfo=JST)
+                print('[param.json] Start timestamp:', format_jst(threshold_jst))
+
     
     json_files = [f for f in os.listdir(meta_dir) if f.endswith(".json")]
     json_files.sort()
@@ -66,8 +68,6 @@ def load(path: str):
                     print(row['json'])
 
     return infos, lots
-
-
 
 def save_label(path: str, infos: list[ParkingInfo]):
     path = os.path.join(path, 'label.csv')
@@ -300,14 +300,13 @@ def eval(lots, infos: list[ParkingInfo]):
         ),
         '全桁精度（メタごと）': (
             len(detect_ok) / len(detect_all),
-            len(detect_ok_f) / len(detect_all_f)
+            len(detect_ok_f) / len(detect_all_f) if len(detect_all_f) > 0 else 0
         ),
         '全桁精度（見切れ/FP抜き）': (
             len(detect_ok) / (len(detect_all) - len(ng_fp) - len(ng_out)),
-            len(detect_ok_f) / (len(detect_all_f) - len(ng_fp_f) - len(ng_out_f))
+            len(detect_ok_f) / (len(detect_all_f) - len(ng_fp_f) - len(ng_out_f)) if (len(detect_all_f) - len(ng_fp_f) - len(ng_out_f)) > 0 else 0
         )
 }
-
 
 def save_eval(path: str, lots, infos: list[ParkingInfo]):        
     eval_results = eval(lots, infos)

@@ -92,7 +92,7 @@ class ParkingInfo:
     def set_gt_unknown(self, gt_unknown):
         self.is_gt_unknown = gt_unknown
 
-    def set_first_park(self, first_park):
+    def set_is_first(self, first_park):
         self.is_first = first_park
 
     def is_conf_ng(self, threshold=0.3):
@@ -130,8 +130,11 @@ class ParkingInfo:
         return self.move_plate_end_y - self.stop_info.move_plate_end_y
     
     def is_move_y_ng(self, threshold=0):
-        diff_y = self.diff_move_y()
-        if diff_y is not None and diff_y < threshold:
-            return True
+        if self.status != Status.MovingOut:
+            return False
         
+        diff_y = self.diff_move_y()
+        if diff_y is not None and diff_y > threshold:
+            return True
+    
         return False
