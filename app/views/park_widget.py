@@ -87,7 +87,7 @@ class ParkWidget(QWidget):
 
         # Plate Image
         plate_layout = QHBoxLayout()
-        self.plate_label = ClickableImageLabel()
+        self.plate_label = ClickableImageLabel(scale=2)
         self.plate_label.setFixedSize(240, 100)
         self.plate_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         plate_layout.addWidget(self.plate_label)

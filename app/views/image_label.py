@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt, QRect
 from pathlib import Path
 
 from app.models.parking_info import ParkingInfo
+from app.types import Status
 
 class ClickableImageLabel(QLabel):
     def __init__(self, show_status_rect: bool = False, show_plate_rect: bool = False, show_vehicle_rect: bool = False, scale:int=1):
@@ -75,7 +76,12 @@ class ClickableImageLabel(QLabel):
                 pen = QPen(QColor(0, 255, 0, 255), 3)
                 pen.setStyle(Qt.PenStyle.SolidLine)
             elif self.info.vehicle_status == 'Moving':
-                pen = QPen(QColor(255, 255, 0, 255), 2)
+                if self.info.status == Status.MovingIn:
+                    pen = QPen(QColor(0, 255, 255, 255), 2)
+                elif self.info.status == Status.MovingOut:
+                    pen = QPen(QColor(255, 0, 255, 255), 2)
+                else:
+                    pen = QPen(QColor(255, 255, 0, 255), 2)
                 pen.setStyle(Qt.PenStyle.DotLine)
             else:
                 pen = QPen(QColor(255, 255, 255, 255), 1)

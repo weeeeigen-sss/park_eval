@@ -104,6 +104,10 @@ class MainWidget(QMainWindow):
         self.auto_label_button.clicked.connect(self.auto_label_moving)
         toolbar.addWidget(self.auto_label_button)
 
+        self.eval_move_button = QPushButton('Eval Movement')
+        self.eval_move_button.clicked.connect(self.eval_movement)
+        toolbar.addWidget(self.eval_move_button)
+
         self.show_status = QCheckBox('Show Status')
         self.show_status.setChecked(True)
         self.show_status.stateChanged.connect(self.on_show_status_changed)
@@ -343,11 +347,10 @@ class MainWidget(QMainWindow):
         self.eval_movement()
         self.update_views()
 
-    def eval_movement(self, threshold_y=0):
-        wrong_out_happened = False
-        last_stop = None
-
+    def eval_movement(self):
         for lot in self.lots:
+            wrong_out_happened = False
+            last_stop = None
             for info in [self_info for self_info in self.infos if self_info.lot == lot]:
                 if info.vehicle_status == 'Stop':
                     # 誤出庫の場合、その後のStopは1回無視
