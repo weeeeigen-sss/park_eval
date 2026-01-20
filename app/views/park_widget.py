@@ -87,12 +87,13 @@ class ParkWidget(QWidget):
 
         # Plate Image
         plate_layout = QHBoxLayout()
-        self.plate_label = ClickableImageLabel(scale=2)
-        self.plate_label.setFixedSize(240, 100)
+        self.plate_label = ClickableImageLabel()
+        self.plate_label.setFixedSize(360, 200)
         self.plate_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         plate_layout.addWidget(self.plate_label)
 
         plate_info_layout = QVBoxLayout()
+        plate_info_layout.addStretch()
         self.plate_lp_label = QLabel('LPR Result')
         plate_info_layout.addWidget(self.plate_lp_label)
 

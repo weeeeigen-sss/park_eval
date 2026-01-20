@@ -68,8 +68,10 @@ class ClickableImageLabel(QLabel):
             painter = QPainter(self)
             painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-            w = self.width()
-            h = self.height()
+            w = min(self.pixmap().width(), self.width())
+            h = min(self.pixmap().height(), self.height())
+            # print(f'Width: {w}, Height: {h}')
+            # print(self.pixmap().width(), self.pixmap().height())
 
             rect = QRect(0, 0, w // 2, h) if self.info.lot == '00' else QRect(w // 2, 0, w - w // 2, h)
             if self.info.vehicle_status == 'Stop':
