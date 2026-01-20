@@ -21,11 +21,16 @@ class ClickableImageLabel(QLabel):
         
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))  # 手のアイコンに変更
 
-    def set(self, image_path: str, info: ParkingInfo):
+    def set(self, image_path: str, info: ParkingInfo, rect: QRect = None):
         self.info = info
         if os.path.exists(image_path):
             self.image_path = Path(image_path)
             pixmap = QPixmap(str(self.image_path))
+            
+            # rectが指定されている場合はクロップする
+            if rect is not None:
+                pixmap = pixmap.copy(rect)
+            
             scaled_pixmap = pixmap.scaled(pixmap.width() // self.scale, pixmap.height() // self.scale, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
             self.setPixmap(scaled_pixmap)
             self.setToolTip("Reveal in Finder")
@@ -63,10 +68,11 @@ class ClickableImageLabel(QLabel):
         if self.info is None:
             return
 
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         if self.show_status_rect:
             # Paint for vehicle status
-            painter = QPainter(self)
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+            
 
             w = min(self.pixmap().width(), self.width())
             h = min(self.pixmap().height(), self.height())

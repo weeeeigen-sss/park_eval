@@ -11,7 +11,10 @@ def load(path: str):
     # Load metadata json
     meta_dir = os.path.join(path, 'META')
     if not os.path.exists(meta_dir):
-        return None, None
+        # For ebsim
+        meta_dir = os.path.join(path, 't4meta')
+        if not os.path.exists(meta_dir):
+            return None, None
     
     threshold_jst = None
     param_json = os.path.join(path, 'param.json')
