@@ -5,7 +5,7 @@ import regex
 from app.types import Status
 
 class ParkingInfo:
-    def __init__(self, json_path):
+    def __init__(self, json_path, min_x=0, min_y=0, max_x=0, max_y=0):
         split = os.path.splitext(os.path.basename(json_path))[0].split('_')
 
         # For ebsim
@@ -22,10 +22,6 @@ class ParkingInfo:
             # For ebsim
             if self.lot == "ebsim":
                 results = data["Inference_Results"]
-                min_x = 0
-                max_x = 1007
-                min_y = 228
-                max_y = 1519
 
                 parking_gate_info = None
                 best_score = 0

@@ -32,8 +32,24 @@ def load(path: str):
 
     infos: list[ParkingInfo] = []
     lots = []
+
+    # For ebsim, load ROI
+    min_x = 0
+    min_y = 0
+    max_x = 0
+    max_y = 0
+    roi_path = os.path.join(path, 'roi.json')
+    if os.path.exists(roi_path):
+        with open(roi_path, "r", encoding="utf-8") as roi_f:
+                roi_data = json.load(roi_f)
+                min_x = roi_data.get("min_x", 0)
+                min_y = roi_data.get("min_y", 0)
+                max_x = roi_data.get("max_x", 0)
+                max_y = roi_data.get("max_y", 0)
+                print(f'ROI loaded: {min_x}, {min_y}, {max_x}, {max_y}')
+
     for json_file in json_files:
-        info = ParkingInfo(os.path.join(meta_dir, json_file))
+        info = ParkingInfo(os.path.join(meta_dir, json_file), min_x=min_x, min_y=min_y, max_x=max_x, max_y=max_y)
         
         if threshold_jst:
             info_jst= parse_timestamp(info.timestamp)
