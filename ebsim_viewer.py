@@ -34,6 +34,7 @@ class EBSIMWidget(QMainWindow):
 
         self.is_first = QCheckBox('初回')
         self.is_first.stateChanged.connect(self.on_first_park_changed)
+        self.is_first.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         layout.addWidget(self.is_first)
 
         wrong_layout = QHBoxLayout()
@@ -69,6 +70,7 @@ class EBSIMWidget(QMainWindow):
 
         self.save_button = QPushButton('Save')
         self.save_button.clicked.connect(self.save)
+        self.save_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         toolbar.addWidget(self.save_button)
 
     def load(self, path: str):
