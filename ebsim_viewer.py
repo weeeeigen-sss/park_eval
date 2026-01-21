@@ -41,22 +41,25 @@ class EBSIMWidget(QMainWindow):
         self.wrong_top_checkbox = QCheckBox("Wrong Top")
         self.wrong_top_checkbox.setChecked(False)
         self.wrong_top_checkbox.stateChanged.connect(self.wrong_top_checkbox_changed)
+        self.wrong_top_checkbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         wrong_layout.addWidget(self.wrong_top_checkbox)
 
         self.wrong_bottom_checkbox = QCheckBox("Wrong Bottom")
         self.wrong_bottom_checkbox.setChecked(False)
         self.wrong_bottom_checkbox.stateChanged.connect(self.wrong_bottom_checkbox_changed)
+        self.wrong_bottom_checkbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         wrong_layout.addWidget(self.wrong_bottom_checkbox)    
         layout.addLayout(wrong_layout)
 
         self.combo = QComboBox()
         self.combo.addItems([text_for(status) for status in Status])
         self.combo.currentIndexChanged.connect(self.on_combo_changed)
+        self.combo.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         layout.addWidget(self.combo)
 
         container = QWidget()
         container.setLayout(layout)
-        container.setFocusPolicy(Qt.FocusPolicy.ClickFocus)  # フォーカスポリシーを設定
+        container.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         self.setCentralWidget(container)
 
         # Toolbar
