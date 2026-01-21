@@ -5,7 +5,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import (
     QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog, QLabel, QTabWidget, QTableWidget, QTableWidgetItem, QCheckBox)
 from PyQt6.QtCore import Qt, QRect
-from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication
+from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication, QKeyEvent
 
 from PyQt6.QtWidgets import QApplication
            
@@ -56,6 +56,7 @@ class EBSIMWidget(QMainWindow):
 
         container = QWidget()
         container.setLayout(layout)
+        container.setFocusPolicy(Qt.FocusPolicy.ClickFocus)  # フォーカスポリシーを設定
         self.setCentralWidget(container)
 
         # Toolbar
@@ -137,7 +138,7 @@ class EBSIMWidget(QMainWindow):
         if self.infos is not None:
             self.infos[self.index].set_is_first(check == Qt.CheckState.Checked.value)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event: QKeyEvent):
         if len(self.infos) > 0:
             if event.key() == Qt.Key.Key_Left:
                 event.ignore()
