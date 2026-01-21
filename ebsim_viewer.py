@@ -140,6 +140,7 @@ class EBSIMWidget(QMainWindow):
     def keyPressEvent(self, event):
         if len(self.infos) > 0:
             if event.key() == Qt.Key.Key_Left:
+                event.ignore()
                 flag = self.index <= 0
                 self.index = len(self.infos) - 1 if flag else self.index - 1
                 self.update_view()
@@ -147,6 +148,7 @@ class EBSIMWidget(QMainWindow):
                     self.statusBar().showMessage('最後尾に移動しました')
                     
             elif event.key() == Qt.Key.Key_Right:
+                event.ignore()
                 flag = self.index >= len(self.infos) - 1
                 self.index = 0 if flag else self.index + 1
                 self.update_view()
