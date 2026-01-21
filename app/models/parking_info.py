@@ -5,22 +5,29 @@ import regex
 from app.types import Status
 
 class ParkingInfo:
-    def __init__(self, json_path, min_x=0, min_y=0, max_x=0, max_y=0):
+    def __init__(self, info: dict, data: dict, json_path: str, lot: str = "", is_ps: bool = False):
+        self.lot = lot
+        self.is_ps = is_ps
+
+        self.parse_info(info, data, json_path)
+
+    @classmethod
+    def create(cls, json_path, min_x=0, min_y=0, max_x=0, max_y=0):
         split = os.path.splitext(os.path.basename(json_path))[0].split('_')
 
         # For ebsim
         if len(split) < 2:
-            self.lot = "ebsim"
-            self.is_ps = False
+            lot = "ebsim"
+            is_ps = False
         else:
-            self.lot = split[1]
-            self.is_ps = len(split) == 3
+            lot = split[1]
+            is_ps = len(split) == 3
 
         with open(json_path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
             # For ebsim
-            if self.lot == "ebsim":
+            if lot == "ebsim":
                 results = data["Inference_Results"]
 
                 parking_gate_info = None
@@ -39,15 +46,17 @@ class ParkingInfo:
                         if score > best_score:
                             parking_gate_info = tmp
                         best_score = score
-                self.parse_info(parking_gate_info, data, json_path)
-            
-            # For normal case
+
+                    if parking_gate_info is not None:
+                        return ParkingInfo(parking_gate_info, data, json_path)
+                    else:
+                        return None
             else:
                 parking_lot_info = data["Inference_Results"][0]["parking_lot_info"]
                 for info in parking_lot_info:
-                    if info["Lot"] != self.lot:
+                    if info["Lot"] != lot:
                         continue
-                    self.parse_info(info, data, json_path)
+                    return ParkingInfo(info, data, json_path, lot, is_ps)
 
     def parse_info(self, info: dict, data: dict, json_path: str):
         self.json_data = data

@@ -19,6 +19,9 @@ class EBSIMWidget(QMainWindow):
         super().__init__()
 
         layout = QVBoxLayout()
+        self.index_label = QLabel("0 / 0")
+        layout.addWidget(self.index_label)
+
         self.raw_label = ClickableImageLabel(show_plate_rect=True, show_vehicle_rect=True, scale=5)
         layout.addWidget(self.raw_label)
 
@@ -29,6 +32,8 @@ class EBSIMWidget(QMainWindow):
 
         self.plate_text_label = QLabel()
         plate_layout.addWidget(self.plate_text_label)
+
+        plate_layout.addStretch()
 
         layout.addLayout(plate_layout)
 
@@ -194,6 +199,8 @@ class EBSIMWidget(QMainWindow):
         
     def update_view(self):
         info = self.infos[self.index]
+
+        self.index_label.setText(f"{self.index + 1} / {len(self.infos)}")
 
         self.plate_text_label.setText(f'{info.lpr_top} ({float(info.top_quality):.3f})\n{info.lpr_bottom} ({float(info.bottom_quality):.3f})\n')
 

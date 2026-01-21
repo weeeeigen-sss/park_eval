@@ -49,7 +49,9 @@ def load(path: str):
                 print(f'ROI loaded: {min_x}, {min_y}, {max_x}, {max_y}')
 
     for json_file in json_files:
-        info = ParkingInfo(os.path.join(meta_dir, json_file), min_x=min_x, min_y=min_y, max_x=max_x, max_y=max_y)
+        info = ParkingInfo.create(os.path.join(meta_dir, json_file), min_x, min_y, max_x, max_y)
+        if info is None:
+            continue
         
         if threshold_jst:
             info_jst= parse_timestamp(info.timestamp)
