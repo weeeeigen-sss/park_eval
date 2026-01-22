@@ -1,6 +1,5 @@
 import os, sys, csv
-import subprocess
-from pathlib import Path
+import argparse
 
 from PyQt6.QtWidgets import (
     QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog, QLabel, QTabWidget, QTableWidget, QTableWidgetItem, QCheckBox)
@@ -55,7 +54,33 @@ class EBSIMWidget(QMainWindow):
         self.wrong_bottom_checkbox.stateChanged.connect(self.wrong_bottom_checkbox_changed)
         self.wrong_bottom_checkbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         wrong_layout.addWidget(self.wrong_bottom_checkbox)    
+
+        self.wrong_prefecture_checkbox = QCheckBox("Wrong Prefecture")
+        self.wrong_prefecture_checkbox.setChecked(False)
+        self.wrong_prefecture_checkbox.stateChanged.connect(self.wrong_prefecture_checkbox_changed)
+        self.wrong_prefecture_checkbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
+        wrong_layout.addWidget(self.wrong_prefecture_checkbox)
+
+        self.wrong_classificationnumber_checkbox = QCheckBox("Wrong ClassificationNumber")
+        self.wrong_classificationnumber_checkbox.setChecked(False)
+        self.wrong_classificationnumber_checkbox.stateChanged.connect(self.wrong_classificationnumber_checkbox_changed)
+        self.wrong_classificationnumber_checkbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
+        wrong_layout.addWidget(self.wrong_classificationnumber_checkbox)
+
+        self.wrong_hiragana_checkbox = QCheckBox("Wrong Hiragana")
+        self.wrong_hiragana_checkbox.setChecked(False)
+        self.wrong_hiragana_checkbox.stateChanged.connect(self.wrong_hiragana_checkbox_changed)
+        self.wrong_hiragana_checkbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
+        wrong_layout.addWidget(self.wrong_hiragana_checkbox)
+
+        self.wrong_lpnumber_checkbox = QCheckBox("Wrong LPNumber")
+        self.wrong_lpnumber_checkbox.setChecked(False)
+        self.wrong_lpnumber_checkbox.stateChanged.connect(self.wrong_lpnumber_checkbox_changed)
+        self.wrong_lpnumber_checkbox.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
+        wrong_layout.addWidget(self.wrong_lpnumber_checkbox)
+
         layout.addLayout(wrong_layout)
+
 
         self.combo = QComboBox()
         self.combo.addItems([text_for(status) for status in Status])
@@ -78,7 +103,7 @@ class EBSIMWidget(QMainWindow):
         self.save_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         toolbar.addWidget(self.save_button)
 
-    def load(self, path: str):
+    def load(self, path: str, tb_only: bool):
         # load
         infos, _ = load(path)
         if not infos:
@@ -86,9 +111,17 @@ class EBSIMWidget(QMainWindow):
             return
         
         self.path = path
+        self.tb_only = tb_only
         self.infos = infos
+
         self.wrong_top_infos = []
         self.wrong_bottom_infos = []
+
+        self.wrong_prefecture_infos = []
+        self.wrong_classificationnumber_infos = []
+        self.wrong_hiragana_infos = []
+        self.wrong_lpnumber_infos = []
+
         self.index = 0
         
         # Load ebsim label csv
@@ -100,13 +133,30 @@ class EBSIMWidget(QMainWindow):
                 for row in reader:
                     match = [info for info in infos if info.json_file == row['json']]
                     if len(match) == 1:
-                        if 'top_correct' in row:
-                            if row['top_correct'] == '0':
-                                self.wrong_top_infos.append(match[0])
+                        if self.tb_only:
+                            if 'top_correct' in row:
+                                if row['top_correct'] == '0':
+                                    self.wrong_top_infos.append(match[0])
 
-                        if 'bottom_correct' in row:
-                            if row['bottom_correct'] == '0':
-                                self.wrong_bottom_infos.append(match[0])
+                            if 'bottom_correct' in row:
+                                if row['bottom_correct'] == '0':
+                                    self.wrong_bottom_infos.append(match[0])
+                        else:
+                            if 'Prefecture_correct' in row:
+                                if row['Prefecture_correct'] == '0':
+                                    self.wrong_prefecture_infos.append(match[0])
+
+                            if 'ClassificationNumber_correct' in row:
+                                if row['ClassificationNumber_correct'] == '0':
+                                    self.wrong_classificationnumber_infos.append(match[0])
+
+                            if 'hiragana_correct' in row:
+                                if row['hiragana_correct'] == '0':
+                                    self.wrong_hiragana_infos.append(match[0])
+
+                            if 'LPNumber_correct' in row:
+                                if row['LPNumber_correct'] == '0':
+                                    self.wrong_lpnumber_infos.append(match[0])
                             
                         if 'is_first' in row:
                             match[0].is_first = bool(int(row['is_first']))
@@ -136,6 +186,46 @@ class EBSIMWidget(QMainWindow):
         else:
             if self.infos[self.index] in self.wrong_bottom_infos:
                 self.wrong_bottom_infos.remove(self.infos[self.index])
+
+        self.update_combo()
+
+    def wrong_prefecture_checkbox_changed(self, check):
+        if check == Qt.CheckState.Checked.value:
+            if self.infos[self.index] not in self.wrong_prefecture_infos:
+                self.wrong_prefecture_infos.append(self.infos[self.index])
+        else:
+            if self.infos[self.index] in self.wrong_prefecture_infos:
+                self.wrong_prefecture_infos.remove(self.infos[self.index])
+        
+        self.update_combo()
+
+    def wrong_classificationnumber_checkbox_changed(self, check):
+        if check == Qt.CheckState.Checked.value:
+            if self.infos[self.index] not in self.wrong_classificationnumber_infos:
+                self.wrong_classificationnumber_infos.append(self.infos[self.index])
+        else:
+            if self.infos[self.index] in self.wrong_classificationnumber_infos:
+                self.wrong_classificationnumber_infos.remove(self.infos[self.index])
+
+        self.update_combo()
+
+    def wrong_hiragana_checkbox_changed(self, check):
+        if check == Qt.CheckState.Checked.value:
+            if self.infos[self.index] not in self.wrong_hiragana_infos:
+                self.wrong_hiragana_infos.append(self.infos[self.index])
+        else:
+            if self.infos[self.index] in self.wrong_hiragana_infos:
+                self.wrong_hiragana_infos.remove(self.infos[self.index])
+        
+        self.update_combo()
+
+    def wrong_lpnumber_checkbox_changed(self, check):
+        if check == Qt.CheckState.Checked.value:
+            if self.infos[self.index] not in self.wrong_lpnumber_infos:
+                self.wrong_lpnumber_infos.append(self.infos[self.index])
+        else:
+            if self.infos[self.index] in self.wrong_lpnumber_infos:
+                self.wrong_lpnumber_infos.remove(self.infos[self.index])
 
         self.update_combo()
 
@@ -202,7 +292,11 @@ class EBSIMWidget(QMainWindow):
 
         self.index_label.setText(f"{self.index + 1} / {len(self.infos)}")
 
-        self.plate_text_label.setText(f'{info.lpr_top} ({float(info.top_quality):.3f})\n{info.lpr_bottom} ({float(info.bottom_quality):.3f})\n')
+        if self.tb_only:
+            self.plate_text_label.setText(f'{info.lpr_top} ({float(info.top_quality):.3f})\n{info.lpr_bottom} ({float(info.bottom_quality):.3f})\n')
+        else:
+            self.plate_text_label.setText(
+                f'{info.prefecture} ({float(info.prefecture_quality):.3f})\n{info.classification_number} ({float(info.classification_number_quality):.3f})\n{info.hiragana} ({float(info.hiragana_quality):.3f})\n{info.license_plate_number} ({float(info.license_plate_number_quality):.3f})')
 
         image_path = os.path.join(self.path, 'isp', info.timestamp + '.png')
         self.raw_label.set(image_path, info)
@@ -211,29 +305,69 @@ class EBSIMWidget(QMainWindow):
 
         self.is_first.setChecked(info.is_first)
 
-        if info in self.wrong_top_infos:
-            self.wrong_top_checkbox.setChecked(True)
-        else:
-            self.wrong_top_checkbox.setChecked(False)
+        if self.tb_only:
+            self.wrong_prefecture_checkbox.hide()
+            self.wrong_classificationnumber_checkbox.hide()
+            self.wrong_hiragana_checkbox.hide()
+            self.wrong_lpnumber_checkbox.hide()
 
-        if info in self.wrong_bottom_infos:
-            self.wrong_bottom_checkbox.setChecked(True)
+            if info in self.wrong_top_infos:
+                self.wrong_top_checkbox.setChecked(True)
+            else:
+                self.wrong_top_checkbox.setChecked(False)
+
+            if info in self.wrong_bottom_infos:
+                self.wrong_bottom_checkbox.setChecked(True)
+            else:
+                self.wrong_bottom_checkbox.setChecked(False)
         else:
-            self.wrong_bottom_checkbox.setChecked(False)
+            self.wrong_top_checkbox.hide()
+            self.wrong_bottom_checkbox.hide()
+
+            if info in self.wrong_prefecture_infos:
+                self.wrong_prefecture_checkbox.setChecked(True)
+            else:
+                self.wrong_prefecture_checkbox.setChecked(False)
+
+            if info in self.wrong_classificationnumber_infos:
+                self.wrong_classificationnumber_checkbox.setChecked(True)
+            else:
+                self.wrong_classificationnumber_checkbox.setChecked(False)
+
+            if info in self.wrong_hiragana_infos:
+                self.wrong_hiragana_checkbox.setChecked(True)
+            else:
+                self.wrong_hiragana_checkbox.setChecked(False)
+
+            if info in self.wrong_lpnumber_infos:
+                self.wrong_lpnumber_checkbox.setChecked(True)
+            else:
+                self.wrong_lpnumber_checkbox.setChecked(False)
 
         self.update_combo()
 
     def update_combo(self):
-        if self.wrong_top_checkbox.isChecked() or self.wrong_bottom_checkbox.isChecked():
-            self.combo.setEnabled(True)
-            self.combo.setCurrentIndex(self.infos[self.index].status.value)
+        if self.tb_only:
+            if self.wrong_top_checkbox.isChecked() or self.wrong_bottom_checkbox.isChecked():
+                self.combo.setEnabled(True)
+                self.combo.setCurrentIndex(self.infos[self.index].status.value)
+            else:
+                self.combo.setEnabled(False)
         else:
-            self.combo.setEnabled(False)
+            if (self.wrong_prefecture_checkbox.isChecked() or
+                self.wrong_classificationnumber_checkbox.isChecked() or
+                self.wrong_hiragana_checkbox.isChecked() or
+                self.wrong_lpnumber_checkbox.isChecked()):
+                self.combo.setEnabled(True)
+                self.combo.setCurrentIndex(self.infos[self.index].status.value)
+            else:
+                self.combo.setEnabled(False)
 
     def save(self):
         if not self.path:
             return
-        save_path = self.save_label()
+        
+        save_path = self.save_label() if self.tb_only else self.save_label2()
         self.statusBar().showMessage(f'Saved: {save_path}')
 
     def save_label(self):
@@ -309,13 +443,122 @@ class EBSIMWidget(QMainWindow):
                         f'{info.status}'
                     ])
         return path
+    
+    def save_label2(self):
+        path = os.path.join(self.path, 'ebsim_label.csv')
+        with open(path, 'w', newline='', encoding='utf-8-sig') as f:
+            writer = csv.writer(f)
+            writer.writerow(
+                [
+                    'json',
+                    'Timestamp',
+                    'lot',
+
+                    'vehicle_xmin', 'vehicle_ymin',
+                    'vehicle_xmax', 'vehicle_ymax',
+                    'vehicle_wdith', 'vehicle_height',
+                    'vehicle_score',
+
+                    'Prefecture', 'prefecture_quality',
+                    'ClassificationNumber', 'classification_number_quality',
+                    'Hiragana', 'hiragana_quality',
+                    'LicensePlateNumber', 'license_plate_number_quality',
+
+                    'plate_xmin', 'plate_ymin',
+                    'plate_xmax', 'plate_ymax',
+                    'plate_width', 'plate_height',
+                    'plate_score',
+                    'plate_confidence',
+                    'plate_count',
+
+                    'car_num',
+                    'Prefecture_correct', 'ClassificationNumber_correct', 'hiragana_correct', 'LPNumber_correct',
+                    'Prefecture_correct_quality', 'Prefecture_incorrect_quality', 
+                    'ClassificationNumber_correct_quality', 'ClassificationNumber_incorrect_quality', 
+                    'hiragana_correct_quality', 'hiragana_incorrect_quality', 
+                    'LPNumber_correct_quality', 'LPNumber_incorrect_quality',
+
+                    'top_correct', 'bottom_correct',
+                    'top_correct_quality', 'top_incorrect_quality', 
+                    'bottom_correct_quality', 'bottom_incorrect_quality',
+
+                    'is_first',
+                    'status',
+                    'status_label'
+                    ])
+            
+            car_num = 0
+            for info in self.infos:
+                if info.is_first:
+                    car_num += 1
+                
+                wrong_top = info in self.wrong_prefecture_infos or info in self.wrong_classificationnumber_infos
+                wrong_bottom = info in self.wrong_hiragana_infos or info in self.wrong_lpnumber_infos
+
+                top_quality = (info.prefecture_quality + info.classification_number_quality) / 2
+                bottom_quality = (info.hiragana_quality + info.license_plate_number_quality) / 2
+                
+
+                writer.writerow(
+                    [
+                        f'{info.json_file}',
+                        f'{info.timestamp}',
+                        f'{info.lot}', 
+
+
+                        f'{info.vehicle_xmin}', f'{info.vehicle_ymin}',
+                        f'{info.vehicle_xmax}', f'{info.vehicle_ymax}',
+                        f'{info.vehicle_wdith}', f'{info.vehicle_height}',
+                        f'{info.vehicle_score}',
+
+                        f'{info.prefecture}', f'{info.prefecture_quality}',
+                        f'{info.classification_number}', f'{info.classification_number_quality}',
+                        f'{info.hiragana}', f'{info.hiragana_quality}',
+                        f'{info.license_plate_number}', f'{info.license_plate_number_quality}',
+
+                        f'{info.plate_xmin}', f'{info.plate_ymin}',
+                        f'{info.plate_xmax}', f'{info.plate_ymax}',
+                        f'{info.plate_width}', f'{info.plate_height}',
+                        f'{info.plate_score}',
+
+                        f'{info.plate_confidence}',
+
+                        f'{info.plate_count}',
+
+                        f'{car_num}',
+                        '0' if info in self.wrong_prefecture_infos else '1', 
+                        '0' if info in self.wrong_classificationnumber_infos else '1', 
+                        '0' if info in self.wrong_hiragana_infos else '1', 
+                        '0' if info in self.wrong_lpnumber_infos else '1',
+
+                        '' if info in self.wrong_prefecture_infos else info.prefecture_quality, info.prefecture_quality if info in self.wrong_prefecture_infos else '', 
+                        '' if info in self.wrong_classificationnumber_infos else info.classification_number_quality, info.classification_number_quality if info in self.wrong_classificationnumber_infos else '',
+                        '' if info in self.wrong_hiragana_infos else info.hiragana_quality, info.hiragana_quality if info in self.wrong_hiragana_infos else '', 
+                        '' if info in self.wrong_lpnumber_infos else info.license_plate_number_quality, info.license_plate_number_quality if info in self.wrong_lpnumber_infos else '',
+
+                        '0' if wrong_top else '1', 
+                        '0' if wrong_bottom else '1', 
+                        '' if wrong_top else top_quality, top_quality if wrong_top else '',
+                        '' if wrong_bottom else bottom_quality, bottom_quality if wrong_bottom else '',
+                        
+                        f'{int(info.is_first)}',
+                        f'{info.status.value}',
+                        f'{info.status}'
+                    ])
+        return path
 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
+    parser = argparse.ArgumentParser()
+    parser.add_argument("path", default=None, help="path to ebsim data")
+    parser.add_argument("--tb-only", action="store_true", help="only top and bottom")
+
+    args = parser.parse_args()
+
     window = EBSIMWidget()
-    if len(sys.argv) == 2:
-        window.load(sys.argv[1])
+    window.load(args.path, args.tb_only)
+    
     window.show()
     sys.exit(app.exec())

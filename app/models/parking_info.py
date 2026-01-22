@@ -75,6 +75,15 @@ class ParkingInfo:
         self.lpr_bottom = plate_number.get("Bottom")
         self.bottom_quality = plate_number.get("Bottom_Quality")
 
+        self.prefecture = plate_number.get("Prefecture")
+        self.prefecture_quality = plate_number.get("Prefecture_Quality")
+        self.classification_number = plate_number.get("ClassificationNumber")
+        self.classification_number_quality = plate_number.get("ClassificationNumber_Quality")
+        self.hiragana = plate_number.get("Hiragana")    
+        self.hiragana_quality = plate_number.get("Hiragana_Quality")
+        self.license_plate_number = plate_number.get("LicensePlateNumber")
+        self.license_plate_number_quality = plate_number.get("LicensePlateNumber_Quality")
+
         self.plate_confidence = info.get("Plate_Confidence")
 
         lpd_bbox = info.get("LPD_Bbox", {})
