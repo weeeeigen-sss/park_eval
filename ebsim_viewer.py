@@ -4,7 +4,7 @@ import argparse
 from PyQt6.QtWidgets import (
     QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog, QLabel, QTabWidget, QTableWidget, QTableWidgetItem, QCheckBox)
 from PyQt6.QtCore import Qt, QRect
-from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication, QKeyEvent
+from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication, QKeyEvent, QIcon
 
 from PyQt6.QtWidgets import QApplication
            
@@ -12,6 +12,7 @@ from app.controllers.data_manager import load
 from app.views.image_label import ClickableImageLabel
 from app.types import Status, text_for
 from app.models.parking_info import ParkingInfo
+from app.utlis import parse_timestamp, format_jst, diff_timestamp
 
 class EBSIMWidget(QMainWindow):
     def __init__(self):
@@ -20,6 +21,22 @@ class EBSIMWidget(QMainWindow):
         layout = QVBoxLayout()
         self.index_label = QLabel("0 / 0")
         layout.addWidget(self.index_label)
+
+        # Timestamp
+        timestamp_row = QHBoxLayout()
+        self.timestamp_label = QLabel()
+        timestamp_row.addWidget(self.timestamp_label)
+
+        self.timestamp_copy = QPushButton()
+        self.timestamp_copy.setIcon(QIcon.fromTheme("edit-copy"))
+        self.timestamp_copy.setFixedSize(24, 24)
+        self.timestamp_copy.setToolTip("Copy Timestamp")
+        self.timestamp_copy.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.timestamp_copy.clicked.connect(self.on_time_clicked)
+        timestamp_row.addWidget(self.timestamp_copy)
+
+        timestamp_row.addStretch()
+        layout.addLayout(timestamp_row)
 
         self.raw_label = ClickableImageLabel(show_plate_rect=True, show_vehicle_rect=True, scale=5)
         layout.addWidget(self.raw_label)
@@ -169,6 +186,13 @@ class EBSIMWidget(QMainWindow):
         
         self.update_view()
 
+    def on_time_clicked(self):
+        if self.infos[self.index] is not None:
+            clipboard = QGuiApplication.clipboard()
+            text = f'{self.infos[self.index].timestamp}'
+            clipboard.setText(text)
+
+
     def wrong_top_checkbox_changed(self, check):
         if check == Qt.CheckState.Checked.value:
             if self.infos[self.index] not in self.wrong_top_infos:
@@ -291,6 +315,9 @@ class EBSIMWidget(QMainWindow):
         info = self.infos[self.index]
 
         self.index_label.setText(f"{self.index + 1} / {len(self.infos)}")
+
+        # Update info label
+        self.timestamp_label.setText(f'TimeStamp: {info.timestamp}')
 
         if self.tb_only:
             self.plate_text_label.setText(f'{info.lpr_top} ({float(info.top_quality):.3f})\n{info.lpr_bottom} ({float(info.bottom_quality):.3f})\n')
