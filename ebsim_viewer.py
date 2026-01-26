@@ -25,6 +25,7 @@ class EBSIMWidget(QMainWindow):
         # Timestamp
         timestamp_row = QHBoxLayout()
         self.timestamp_label = QLabel()
+        self.timestamp_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         timestamp_row.addWidget(self.timestamp_label)
 
         self.timestamp_copy = QPushButton()
@@ -33,6 +34,7 @@ class EBSIMWidget(QMainWindow):
         self.timestamp_copy.setToolTip("Copy Timestamp")
         self.timestamp_copy.setCursor(Qt.CursorShape.PointingHandCursor)
         self.timestamp_copy.clicked.connect(self.on_time_clicked)
+        self.timestamp_copy.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         timestamp_row.addWidget(self.timestamp_copy)
 
         timestamp_row.addStretch()
