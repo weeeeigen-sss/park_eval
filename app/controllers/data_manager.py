@@ -17,14 +17,20 @@ def load(path: str):
             return None, None
     
     threshold_jst = None
+    threshold_end_jst = None
     param_json = os.path.join(path, 'param.json')
     if os.path.exists(param_json):
         with open(param_json, "r", encoding="utf-8") as f:
             params = json.load(f)
-            if 'datetime' in params and 'format' in params:
+            if 'start' in params and 'format' in params:
                 JST = timezone(timedelta(hours=9))
-                threshold_jst = datetime.strptime(params['datetime'], params['format']).replace(tzinfo=JST)
+                threshold_jst = datetime.strptime(params['start'], params['format']).replace(tzinfo=JST)
                 print('[param.json] Start timestamp:', format_jst(threshold_jst))
+
+            if 'end' in params and 'format' in params:
+                JST = timezone(timedelta(hours=9))
+                threshold_end_jst = datetime.strptime(params['end'], params['format']).replace(tzinfo=JST)
+                print('[param.json] End timestamp:', format_jst(threshold_end_jst))
 
     
     json_files = [f for f in os.listdir(meta_dir) if f.endswith(".json")]
@@ -56,6 +62,11 @@ def load(path: str):
         if threshold_jst:
             info_jst= parse_timestamp(info.timestamp)
             if info_jst < threshold_jst:
+                continue
+
+        if threshold_end_jst:
+            info_jst= parse_timestamp(info.timestamp)
+            if info_jst > threshold_end_jst:
                 continue
        
         infos.append(info)
