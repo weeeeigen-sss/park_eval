@@ -122,6 +122,9 @@ class ParkingInfo:
         self.is_gt_unknown = False
         self.is_first = False
 
+        self.is_wrong_in_by_fp = False
+        self.is_wrong_in_by_side_lot = False
+
 
     def name(self):
         name = self.timestamp + '_' + self.lot

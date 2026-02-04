@@ -150,6 +150,14 @@ class ParkWidget(QWidget):
         self.miss_out.stateChanged.connect(self.on_miss_out_changed)
         option_layout.addWidget(self.miss_out)
 
+        self.wrong_in_by_fp = QCheckBox('誤入庫（FP）')
+        self.wrong_in_by_fp.stateChanged.connect(self.on_wrong_in_by_fp_changed)
+        option_layout.addWidget(self.wrong_in_by_fp)
+
+        self.wrong_in_by_side_lot = QCheckBox('誤入庫（隣接）')
+        self.wrong_in_by_side_lot.stateChanged.connect(self.on_wrong_in_by_side_lot_changed)
+        option_layout.addWidget(self.wrong_in_by_side_lot)
+
         layout.addLayout(option_layout)
 
         btn = QPushButton("Copy Widget Image")
@@ -188,6 +196,14 @@ class ParkWidget(QWidget):
     def on_miss_out_changed(self, check):
         if self.info is not None:
             self.info.set_miss_out(check == Qt.CheckState.Checked.value)
+
+    def on_wrong_in_by_fp_changed(self, check):
+        if self.info is not None:
+            self.info.is_wrong_in_by_fp = (check == Qt.CheckState.Checked.value)
+
+    def on_wrong_in_by_side_lot_changed(self, check):
+        if self.info is not None:
+            self.info.is_wrong_in_by_side_lot = (check == Qt.CheckState.Checked.value)
 
     def on_json_clicked(self):
         if self.info is not None:
@@ -295,11 +311,15 @@ class ParkWidget(QWidget):
         # Update status
         # self.combo.setEnabled(info.vehicle_status != 'Moving')
         self.is_first.setEnabled(info.vehicle_status == 'Stop' or info.status == Status.Wrong_Out)
+        self.wrong_in_by_fp.setEnabled(info.vehicle_status == 'Stop')
+        self.wrong_in_by_side_lot.setEnabled(info.vehicle_status == 'Stop')
 
         self.is_first.setChecked(info.is_first)
         self.gt_unknown.setChecked(info.is_gt_unknown)
         self.miss_in.setChecked(info.is_miss_in)
         self.miss_out.setChecked(info.is_miss_out)
+        self.wrong_in_by_fp.setChecked(info.is_wrong_in_by_fp)
+        self.wrong_in_by_side_lot.setChecked(info.is_wrong_in_by_side_lot)
         self.combo.setCurrentIndex(info.status.value)
 
     # def set_empty(self):

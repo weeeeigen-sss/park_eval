@@ -91,6 +91,12 @@ def load(path: str):
                     if 'is_gt_unknown' in row:
                         match[0].is_gt_unknown = bool(int(row['is_gt_unknown']))
 
+                    if 'is_wrong_in_by_fp' in row:
+                        match[0].is_wrong_in_by_fp = bool(int(row['is_wrong_in_by_fp']))    
+
+                    if 'is_wrong_in_by_side_lot' in row:
+                        match[0].is_wrong_in_by_side_lot = bool(int(row['is_wrong_in_by_side_lot']))
+
                     if 'is_first' in row:
                         match[0].is_first = bool(int(row['is_first']))
 
@@ -135,6 +141,8 @@ def save_label(path: str, infos: list[ParkingInfo]):
                 'is_miss_in',
                 'is_miss_out',
                 'is_gt_unknown',
+                'is_wrong_in_by_fp',
+                'is_wrong_in_by_side_lot',
                 'is_first',
                 'status',
                 'status_label'
@@ -170,6 +178,8 @@ def save_label(path: str, infos: list[ParkingInfo]):
                     f'{int(info.is_miss_in)}',
                     f'{int(info.is_miss_out)}',
                     f'{int(info.is_gt_unknown)}',
+                    f'{int(info.is_wrong_in_by_fp)}',
+                    f'{int(info.is_wrong_in_by_side_lot)}',
                     f'{int(info.is_first)}',
                     f'{info.status.value}',
                     f'{info.status}'
@@ -194,6 +204,8 @@ def eval(lots, infos: list[ParkingInfo]):
     is_miss_in = []
     is_miss_out = []
     is_gt_unknown = []
+    is_wrong_in_by_fp = []
+    is_wrong_in_by_side_lot = []
 
     resend = []
     is_occupied_last = False
@@ -212,6 +224,11 @@ def eval(lots, infos: list[ParkingInfo]):
                 is_miss_in.append(info)
             if info.is_miss_out:
                 is_miss_out.append(info)
+            if info.is_wrong_in_by_fp:
+                is_wrong_in_by_fp.append(info)
+            if info.is_wrong_in_by_side_lot:
+                is_wrong_in_by_side_lot.append(info)    
+            
             
             if info.is_occupied:
                 detect_all.append(info)
@@ -261,6 +278,9 @@ def eval(lots, infos: list[ParkingInfo]):
     ng_ai_f = [info for info in ng_ai if info.is_first == True]
     ng_others_f = [info for info in ng_others if info.is_first == True]
 
+    ng_all = len(ng_out) + len(ng_shadow) + len(ng_occlusion) + len(ng_fp) + len(ng_blur) + len(ng_overexposure) + len(ng_ai) + len(ng_others)
+    ng_all_f = len(ng_out_f) + len(ng_shadow_f) + len(ng_occlusion_f) + len(ng_fp_f) + len(ng_blur_f) + len(ng_overexposure_f) + len(ng_ai_f) + len(ng_others_f)
+
     return {
         '検知総数': (
             len(detect_all),
@@ -278,6 +298,14 @@ def eval(lots, infos: list[ParkingInfo]):
             len(is_miss_out),
             len(is_miss_out),
         ),
+        '誤入庫（FP）': (
+            len(is_wrong_in_by_fp),
+            len(is_wrong_in_by_fp),
+        ),
+        '誤入庫（隣接区画）': (
+            len(is_wrong_in_by_side_lot),
+            len(is_wrong_in_by_side_lot),
+        ),
         '誤出庫': (
             len(wrong_out),
             len(wrong_out_f),
@@ -287,8 +315,8 @@ def eval(lots, infos: list[ParkingInfo]):
             len(detect_ok_f),
         ),
         '全桁NG': (
-            len(ng_out) + len(ng_shadow) + len(ng_occlusion) + len(ng_fp) + len(ng_blur) + len(ng_overexposure) + len(ng_ai) + len(ng_others),
-            len(ng_out_f) + len(ng_shadow_f) + len(ng_occlusion_f) + len(ng_fp_f) + len(ng_blur_f) + len(ng_overexposure_f) + len(ng_ai_f) + len(ng_others_f),
+            ng_all,
+            ng_all_f,
         ),
         '全桁NG（見切れ）': (
             len(ng_out),
@@ -333,6 +361,10 @@ def eval(lots, infos: list[ParkingInfo]):
         '全桁精度（メタごと）': (
             len(detect_ok) / len(detect_all),
             len(detect_ok_f) / len(detect_all_f) if len(detect_all_f) > 0 else 0
+        ),
+        '全桁精度（車両ごと）': (
+            '-',
+            len(detect_ok_f) / (len(detect_ok_f) + ng_all_f + len(is_wrong_in_by_fp) + len(is_wrong_in_by_side_lot))
         ),
         '全桁精度（見切れ/FP抜き）': (
             len(detect_ok) / (len(detect_all) - len(ng_fp) - len(ng_out)),

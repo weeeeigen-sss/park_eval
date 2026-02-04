@@ -63,7 +63,7 @@ class MainWidget(QMainWindow):
         self.tabs.addTab(label_view, 'labeling')
 
         # Eval tab
-        self.eval_view = QTableWidget(19, 3)
+        self.eval_view = QTableWidget(23, 3)
         self.tabs.addTab(self.eval_view, 'eval')
         self.tabs.currentChanged.connect(self.on_tabbar_clicked)
 
@@ -212,24 +212,29 @@ class MainWidget(QMainWindow):
             elif filter_option_index == 3:
                 self.filter_infos = [info for info in self.filter_infos if info.is_miss_out == True]
             elif filter_option_index == 4:
-                self.filter_infos = [info for info in self.filter_infos if info.is_first == True]
+                self.filter_infos = [info for info in self.filter_infos if info.is_wrong_in_by_fp == True]
             elif filter_option_index == 5:
-                self.filter_infos = [info for info in self.filter_infos if info.is_first == False]
+                self.filter_infos = [info for info in self.filter_infos if info.is_wrong_in_by_side_lot == True]
+
             elif filter_option_index == 6:
-                self.filter_infos = [info for info in self.filter_infos if info.is_conf_ng()]
+                self.filter_infos = [info for info in self.filter_infos if info.is_first == True]
             elif filter_option_index == 7:
-                self.filter_infos = [info for info in self.filter_infos if not info.is_conf_ng()]
+                self.filter_infos = [info for info in self.filter_infos if info.is_first == False]
             elif filter_option_index == 8:
-                self.filter_infos = [info for info in self.filter_infos if info.is_top_format_ng()]
+                self.filter_infos = [info for info in self.filter_infos if info.is_conf_ng()]
             elif filter_option_index == 9:
-                self.filter_infos = [info for info in self.filter_infos if not info.is_top_format_ng()]  
+                self.filter_infos = [info for info in self.filter_infos if not info.is_conf_ng()]
             elif filter_option_index == 10:
-                self.filter_infos = [info for info in self.filter_infos if info.is_bottom_format_ng()]
+                self.filter_infos = [info for info in self.filter_infos if info.is_top_format_ng()]
             elif filter_option_index == 11:
-                self.filter_infos = [info for info in self.filter_infos if not info.is_bottom_format_ng()]
+                self.filter_infos = [info for info in self.filter_infos if not info.is_top_format_ng()]  
             elif filter_option_index == 12:
-                self.filter_infos = [info for info in self.filter_infos if info.is_move_y_ng()]
+                self.filter_infos = [info for info in self.filter_infos if info.is_bottom_format_ng()]
             elif filter_option_index == 13:
+                self.filter_infos = [info for info in self.filter_infos if not info.is_bottom_format_ng()]
+            elif filter_option_index == 14:
+                self.filter_infos = [info for info in self.filter_infos if info.is_move_y_ng()]
+            elif filter_option_index == 15:
                 self.filter_infos = [info for info in self.filter_infos if not info.is_move_y_ng()]
             
             # For no infos, reset filter
