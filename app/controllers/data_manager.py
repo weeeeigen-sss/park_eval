@@ -364,7 +364,7 @@ def eval(lots, infos: list[ParkingInfo]):
         ),
         '全桁精度（車両ごと）': (
             '-',
-            len(detect_ok_f) / (len(detect_ok_f) + ng_all_f + len(is_wrong_in_by_fp) + len(is_wrong_in_by_side_lot))
+            len(detect_ok_f) / (len(detect_ok_f) + ng_all_f + len(is_miss_in) + len(is_wrong_in_by_fp) + len(is_wrong_in_by_side_lot))
         ),
         '全桁精度（見切れ/FP抜き）': (
             len(detect_ok) / (len(detect_all) - len(ng_fp) - len(ng_out)),
