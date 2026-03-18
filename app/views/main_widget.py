@@ -2,7 +2,7 @@ import os
 
 from PyQt6.QtWidgets import (
     QWidget, QPushButton, QHBoxLayout, QVBoxLayout, QComboBox, QMainWindow, QToolBar, QFileDialog, QLabel, QTabWidget, QTableWidget, QTableWidgetItem, QCheckBox)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QEvent
 from PyQt6.QtGui import QAction, QKeySequence, QShortcut, QGuiApplication
 
 
@@ -130,6 +130,84 @@ class MainWidget(QMainWindow):
         # Shortcuts
         self.configure_shortcuts()
 
+        # Prevent keyboard-driven focus movement and accidental widget value changes.
+        self.disable_widget_key_interaction()
+
+    def disable_widget_key_interaction(self):
+        for widget in self.findChildren(QWidget):
+            widget.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            widget.installEventFilter(self)
+
+    def _handle_global_key(self, event):
+        if len(self.infos) == 0:
+            return False
+
+        if event.key() == Qt.Key.Key_Left:
+            flag = self.info_index <= self.frames - 1
+            self.info_index = len(self.current_infos) - 1 if flag else self.info_index - 1
+            self.update_views()
+            if flag:
+                self.statusBar().showMessage('最後尾に移動しました')
+            return True
+
+        if event.key() == Qt.Key.Key_Right:
+            flag = self.info_index >= len(self.current_infos) - 1
+            self.info_index = self.frames - 1 if flag else self.info_index + 1
+            self.update_views()
+            if flag:
+                self.statusBar().showMessage('先頭に移動しました')
+            return True
+
+        if event.key() == Qt.Key.Key_Up:
+            if len(self.filter_infos) > 0:
+                flag = self.filter_index <= 0
+                self.filter_index = len(self.filter_infos) - 1 if flag else self.filter_index - 1
+
+                self.info_index = self.current_infos.index(self.filter_infos[self.filter_index])
+                self.update_views()
+            return True
+
+        if event.key() == Qt.Key.Key_Down:
+            if len(self.filter_infos) > 0:
+                flag = self.filter_index >= len(self.filter_infos) - 1
+                self.filter_index = 0 if flag else self.filter_index + 1
+
+                self.info_index = self.current_infos.index(self.filter_infos[self.filter_index])
+                self.update_views()
+            return True
+
+        if event.key() in key_status_map.keys():
+            if len(self.current_infos) > 0:
+                selected_status = key_status_map[event.key()]
+
+                info = self.current_infos[self.info_index]
+                info.set(selected_status)
+
+                self.update_views()
+            return True
+
+        if event.key() == Qt.Key.Key_F:
+            if len(self.current_infos) > 0:
+                current_info = self.current_infos[self.info_index]
+                is_first = current_info.is_first
+                current_info.set_is_first(not is_first)
+
+                self.update_views()
+            return True
+
+        return False
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Type.KeyPress and isinstance(watched, QWidget):
+            # Keep app-level key operations while disabling widget-side key interactions.
+            if self._handle_global_key(event):
+                return True
+
+            if watched is not self:
+                return True
+
+        return super().eventFilter(watched, event)
+
     def load(self, path:str = None):
         if not path:
             path = QFileDialog.getExistingDirectory(None, "フォルダを選択")
@@ -249,56 +327,10 @@ class MainWidget(QMainWindow):
 
 
     def keyPressEvent(self, event):
-        if len(self.infos) > 0:
-            if event.key() == Qt.Key.Key_Left:
-                flag = self.info_index <= self.frames - 1
-                self.info_index = len(self.current_infos) - 1 if flag else self.info_index - 1
-                self.update_views()
-                if flag:
-                    self.statusBar().showMessage('最後尾に移動しました')
-                    
-            elif event.key() == Qt.Key.Key_Right:
-                flag = self.info_index >= len(self.current_infos) - 1
-                self.info_index = self.frames - 1 if flag else self.info_index + 1
-                self.update_views()
-                if flag:
-                    self.statusBar().showMessage('先頭に移動しました')
-                    
-            elif event.key() == Qt.Key.Key_Up:
-                if len(self.filter_infos) > 0:
-                    flag = self.filter_index <= 0
-                    self.filter_index = len(self.filter_infos) - 1 if flag else self.filter_index - 1
+        if self._handle_global_key(event):
+            return
 
-                    self.info_index = self.current_infos.index(self.filter_infos[self.filter_index])
-                    self.update_views()
-
-            elif event.key() == Qt.Key.Key_Down:
-                if len(self.filter_infos) > 0:
-                    flag = self.filter_index >= len(self.filter_infos) - 1
-                    self.filter_index = 0 if flag else self.filter_index + 1
-
-                    self.info_index = self.current_infos.index(self.filter_infos[self.filter_index])
-                    self.update_views()
-
-            elif event.key() in key_status_map.keys():
-                if len(self.current_infos) > 0:
-                    selected_status = key_status_map[event.key()]
-
-                    info = self.current_infos[self.info_index]
-                    info.set(selected_status)
-
-                    self.update_views()
-
-            elif event.key() == Qt.Key.Key_F:
-                if len(self.current_infos) > 0:
-                    current_info = self.current_infos[self.info_index]
-                    is_first = current_info.is_first
-                    current_info.set_is_first(not is_first)
-
-                    self.update_views()
-                    
-        else:
-            super().keyPressEvent(event)  # 他のキーはデフォルト処理
+        super().keyPressEvent(event)
 
     def update_views(self):
         if len(self.filter_infos) > 0:
