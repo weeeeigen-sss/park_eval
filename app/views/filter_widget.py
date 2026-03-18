@@ -2,7 +2,7 @@ import os
 
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QComboBox, QCheckBox, QPushButton, QApplication, QFrame
 from PyQt6.QtGui import QPixmap, QGuiApplication, QIcon, QPalette
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QEvent
 
 from app.views.image_label import ClickableImageLabel
 from app.models.parking_info import ParkingInfo
@@ -22,11 +22,13 @@ class FilterWidget(QFrame):
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(['None'] + [text_for(status) for status in Status])
         self.filter_combo.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
+        self.filter_combo.installEventFilter(self)
         # self.filter_combo.currentIndexChanged.connect(self.update_index)
         layout.addWidget(self.filter_combo)
 
         self.filter_option_combo = QComboBox()
         self.filter_option_combo.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
+        self.filter_option_combo.installEventFilter(self)
         self.filter_option_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し', '誤入庫（FP）', '誤入庫（隣接）', '初回=True', '初回=False', 'PlateConf=NG', 'PlateConf=OK', 'TopFormat=NG', 'TopFormat=OK', 'BottomFormat=NG', 'BottomFormat=OK', 'MoveY=NG', 'MoveY=OK'])
         layout.addWidget(self.filter_option_combo)
 
@@ -50,6 +52,12 @@ class FilterWidget(QFrame):
         layout.addWidget(self.combo)
 
         self.setLayout(layout)
+
+    def eventFilter(self, watched, event):
+        if watched in (self.filter_combo, self.filter_option_combo):
+            if event.type() == QEvent.Type.KeyPress and event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down):
+                return True
+        return super().eventFilter(watched, event)
 
     def set_info(self, infos: list[ParkingInfo], index: int, it_dir: str, raw_dir: str):
         info = infos[index]
