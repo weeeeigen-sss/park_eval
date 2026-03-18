@@ -264,7 +264,7 @@ class MainWidget(QMainWindow):
                 if flag:
                     self.statusBar().showMessage('先頭に移動しました')
                     
-            elif event.key() == Qt.Key.Key_W:
+            elif event.key() == Qt.Key.Key_Up:
                 if len(self.filter_infos) > 0:
                     flag = self.filter_index <= 0
                     self.filter_index = len(self.filter_infos) - 1 if flag else self.filter_index - 1
@@ -272,7 +272,7 @@ class MainWidget(QMainWindow):
                     self.info_index = self.current_infos.index(self.filter_infos[self.filter_index])
                     self.update_views()
 
-            elif event.key() == Qt.Key.Key_S:
+            elif event.key() == Qt.Key.Key_Down:
                 if len(self.filter_infos) > 0:
                     flag = self.filter_index >= len(self.filter_infos) - 1
                     self.filter_index = 0 if flag else self.filter_index + 1

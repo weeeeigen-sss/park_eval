@@ -21,25 +21,31 @@ class FilterWidget(QFrame):
 
         self.filter_combo = QComboBox()
         self.filter_combo.addItems(['None'] + [text_for(status) for status in Status])
+        self.filter_combo.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         # self.filter_combo.currentIndexChanged.connect(self.update_index)
         layout.addWidget(self.filter_combo)
 
         self.filter_option_combo = QComboBox()
+        self.filter_option_combo.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         self.filter_option_combo.addItems(['None', 'GT不明', '入庫見逃し', '出庫見逃し', '誤入庫（FP）', '誤入庫（隣接）', '初回=True', '初回=False', 'PlateConf=NG', 'PlateConf=OK', 'TopFormat=NG', 'TopFormat=OK', 'BottomFormat=NG', 'BottomFormat=OK', 'MoveY=NG', 'MoveY=OK'])
         layout.addWidget(self.filter_option_combo)
 
         self.filter_index_label = QLabel()
+        self.filter_index_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         layout.addWidget(self.filter_index_label)
 
         self.info_label = QLabel()
+        self.info_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         layout.addWidget(self.info_label)
 
         self.raw_label = ClickableImageLabel(scale=10)
+        self.raw_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         layout.addWidget(self.raw_label)
 
         self.combo = QComboBox()
         self.combo.addItems([text_for(status) for status in Status])
         self.combo.setEnabled(False)
+        self.combo.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # フォーカスポリシーを設定
         # self.combo.currentIndexChanged.connect(self.on_combo_changed)
         layout.addWidget(self.combo)
 
